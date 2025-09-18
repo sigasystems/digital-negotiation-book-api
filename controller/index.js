@@ -2,6 +2,7 @@
 
 import * as planController from "./planController/planController.js"; // include full path + .js
 import * as authController from "./authControllers/auth.controller.js"
+import * as paymentController from "./paymentController/payment.controller.js"
 
 // Later you can add more controllers like:
 // import * as userController from "./userController.js";
@@ -11,4 +12,5 @@ export {
   planController,
   // userController,
   authController,
+  paymentController
 };

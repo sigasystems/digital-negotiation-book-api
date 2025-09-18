@@ -2,8 +2,10 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
-import planRoutes from "./routes/planRoutes/planRoutes.js";
+import planRoutes from "./routes/planRoutes/plan.routes.js";
 import authRoutes from "./routes/authRoutes/auth.routes.js"
+import paymentRoutes from "./routes/paymentRoutes/payment.routes.js"
+
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
 import cookieParser from "cookie-parser";
 
@@ -24,6 +26,8 @@ app.use(express.urlencoded({ extended: true }));
 // -------------------------
 app.use("/api/auth",authRoutes)
 app.use("/api/plans", planRoutes);
+app.use("/api/payments", paymentRoutes);
+
 
 app.use(notFoundHandler);
 app.use(errorHandler);
