@@ -1,0 +1,33 @@
+{
+  "name": "dnb",
+  "version": "1.0.0",
+  "description": "A multi-tenant SaaS for seafood sellers to manage products, buyers, and digital negotiations. Business owners onboard teams, add products, and create offers. Buyers respond via secure links with accept, reject, or counter. Offers are tracked, versioned, and analysed, with subscriptions and payments integrated.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate": "node sync.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "dev:backend": "npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "both": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sigasystems/digital-negotiation-book-client.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sigasystems/digital-negotiation-book-client/issues"
+  },
+  "homepage": "https://github.com/sigasystems/digital-negotiation-book-client#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "pg": "^8.16.3",
+    "sequelize": "^6.37.7"
+  }
+}
