@@ -3,6 +3,7 @@
  */
 export const successResponse = (res, status = 200, message = "Success", data = {}) => {
   return res.status(status).json({
+    statusCode: status,
     success: true,
     message,
     data,
@@ -12,8 +13,9 @@ export const successResponse = (res, status = 200, message = "Success", data = {
 /**
  * Send error response
  */
-export const errorResponse = (res, status = 500, message = "Internal Server Error", error = null) => {
+export const errorResponse = (res, status = 500, message = "Internal Server Error", error ) => {
   return res.status(status).json({
+    statusCode: status,
     success: false,
     message,
     error,
