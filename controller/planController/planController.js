@@ -57,7 +57,7 @@ export const updatePlan = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const parsed = updatePlanSchema.safeParse(req.body);
   if (!parsed.success) {
-    return errorResponse(res, 400, parsed.error.errors.map(e => e.message).join(", "));
+    return errorResponse(res, 400, parsed.error.issues.map(e => e.message).join(", "));
   }
   const [updatedRows] = await Plan.update(parsed.data, {
     where: { id },

@@ -1,23 +1,30 @@
 import { asyncHandler } from "../../handlers/asyncHandler.js";
 import Payment from "../../model/paymentModel/payment.model.js";
 import { successResponse, errorResponse } from "../../handlers/responseHandler.js";
+import z from "zod";
+import { paymentSchema } from "../../schemaValidation/paymentValidation.js";
 
 // Create a payment
 export const createPayment = asyncHandler(async (req, res) => {
-  const { userId, planId, amount, currency, paymentMethod, transactionId, status } = req.body;
+  try {
+    const validatedData = paymentSchema.parse(req.body);
+    const payment = await Payment.create({
+      ...validatedData,
+      paidAt: validatedData.status === "success" ? new Date() : null,
 
-  const payment = await Payment.create({
-    userId,
-    planId,
-    amount,
-    currency,
-    paymentMethod,
-    transactionId,
-    status,
-    paidAt: status === "success" ? new Date() : null,
-  });
-
-  return successResponse(res, 201,  "Payment created successfully",payment);
+    });
+    return successResponse(res, 201, "Payment created successfully", payment);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return errorResponse(
+        res,
+        400,
+        "Validation failed",
+        error.issues.map((e) => e.message)
+      );
+    }
+    return errorResponse(res, 500, "Something went wrong", error.message);
+  }
 });
 
 // Get all payments
