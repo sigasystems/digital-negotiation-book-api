@@ -5,10 +5,10 @@ import { authenticateJWT } from "../../middlewares/authenticateJWT.js";
 
 const router = express.Router()
 
-const {register, login, refreshTokenRotation} = authController
+const {register, loginOrSignup, refreshTokenRotation, login} = authController
 
 router.post('/register', rateLimiter, register)
-router.post('/login', rateLimiter, login)
+router.post('/login', rateLimiter, loginOrSignup)
 router.post('/refresh-token', rateLimiter, authenticateJWT, refreshTokenRotation)
 
 export default router
