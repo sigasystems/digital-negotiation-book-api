@@ -57,50 +57,51 @@ export const register = asyncHandler(async (req, res) => {
   });
 });
 
-export const login = asyncHandler(async (req, res) => {
-  // 1. Validate input
-  const parsedData = loginSchemaValidation.safeParse(req.body);
-  if (!parsedData.success) {
-    const errors = parsedData.error.issues.map((issue) => issue.message);
-    return errorResponse(res, 400, errors.join(", "));
-  }
+// export const login = asyncHandler(async (req, res) => {
+//   // 1. Validate input
+//   const parsedData = loginSchemaValidation.safeParse(req.body);
+//   if (!parsedData.success) {
+//     const errors = parsedData.error.issues.map((issue) => issue.message);
+//     return errorResponse(res, 400, errors.join(", "));
+//   }
 
-  const { email, password } = parsedData.data;
+//   const { first_name , last_name, email, password } = parsedData.data;
 
-  // 2. Find user
-  const user = await User.findOne({ where: { email } });
-  if (!user) {
-    return errorResponse(res, 401, "Invalid email or password. New to DNB please register first");
-  }
+//   // 2. Find user
+//   const user = await User.findOne({ where: { email } });
+//   if (!user) {
+//     return errorResponse(res, 401, "Invalid email or password. New to DNB please register first");
+//   }
 
-  // 3. Compare password
-  const isMatch = await bcrypt.compare(password, user.password_hash);
-  if (!isMatch) {
-    return errorResponse(res, 401, "Invalid email or password. New to DNB please register first");
-  }
+//   // 3. Compare password
+//   const isMatch = await bcrypt.compare(password, user.password_hash);
+//   if (!isMatch) {
+//     return errorResponse(res, 401, "Invalid email or password. New to DNB please register first");
+//   }
 
-  // 4. Create tokens
-  const payload = { id: user.id, email: user.email };
+//   // 4. Create tokens
+//   const payload = { id: user.id, email: user.email };
 
-  const accessToken = accessTokenGenerator(payload)
+//   const accessToken = accessTokenGenerator(payload)
 
-  refreshTokenGenerator(res, payload)
+//   refreshTokenGenerator(res, payload)
 
-  // 6. Respond with access token and user info
-  return successResponse(res, 200, "Login successful!", {
-    accessToken,
-    user: {
-      id: user.id,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      company_name: user.company_name,
-      country_code: user.country_code,
-      phone_number: user.phone_number,
-      created_at: user.created_at,
-    },
-  });
-});
+//   // 6. Respond with access token and user info
+//   return successResponse(res, 200, "Login successful!", {
+//     accessToken,
+//     user: {
+//       id: user.id,
+//       first_name: user.first_name,
+//       last_name: user.last_name,
+//       email: user.email,
+//       company_name: user.company_name,
+//       country_code: user.country_code,
+//       phone_number: user.phone_number,
+//       created_at: user.created_at,
+//     },
+//   });
+// });
+
 
 export const refreshTokenRotation = asyncHandler(async (req, res) => {
   // 1. Get refresh token from cookie
@@ -135,4 +136,53 @@ export const refreshTokenRotation = asyncHandler(async (req, res) => {
     console.error("Refresh token error:", err);
     return errorResponse(res, 401, "Something went wrong. Please login again.");
   }
+});
+
+export const loginOrSignup = asyncHandler(async (req, res) => {
+  // 1. Validate input
+  const parsedData = loginSchemaValidation.safeParse(req.body);
+  if (!parsedData.success) {
+    const errors = parsedData.error.issues.map((issue) => issue.message);
+    return errorResponse(res, 400, errors.join(", "));
+  }
+
+  const { first_name, last_name, email, password } = parsedData.data;
+
+  // 2. Find user
+  let user = await User.findOne({ where: { email } });
+
+  // 3. If user does not exist, create user (quick signup)
+  if (!user) {
+    const hashedPassword = await bcrypt.hash(password, 10); // hash password before saving
+    user = await User.create({
+      first_name,
+      last_name,
+      email,
+      password_hash: hashedPassword,
+    });
+  } else {
+    // 4. Compare password for existing user
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return errorResponse(res, 401, "Invalid email or password");
+    }
+  }
+
+  // 5. Create refresh token only
+  const payload = { id: user.id, email: user.email };
+  refreshTokenGenerator(res, payload); // sets refresh token in HttpOnly cookie
+
+  // 6. Respond with user info only (no access token)
+  return successResponse(res, 200, "Login successful!", {
+    user: {
+      id: user.id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      company_name: user.company_name,
+      country_code: user.country_code,
+      phone_number: user.phone_number,
+      created_at: user.created_at,
+    },
+  });
 });

@@ -23,7 +23,7 @@ const User = sequelize.define("User", {
   },
   company_name: {
     type: DataTypes.TEXT,
-    allowNull: false,
+    allowNull: true,
   },
   email: {
     type: DataTypes.TEXT,
@@ -35,14 +35,14 @@ const User = sequelize.define("User", {
   },
   country_code: {
     type: DataTypes.STRING(5),
-    allowNull: false,
+    allowNull: true,
     validate: {
       is: /^\+[1-9]\d{0,3}$/,
     },
   },
   phone_number: {
   type: DataTypes.STRING(15),
-  allowNull: false,
+  allowNull: true,
   unique: true,
   validate: {
     is: /^[0-9]{6,14}$/,
