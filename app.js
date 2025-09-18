@@ -1,9 +1,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import helmet from "helmet";
 import planRoutes from "./routes/planRoutes/planRoutes.js";
 import authRoutes from "./routes/authRoutes/auth.routes.js"
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
+import cookieParser from "cookie-parser";
+
 dotenv.config();
 const app = express();
 
@@ -11,7 +14,9 @@ const app = express();
 // Middleware
 // -------------------------
 app.use(cors());
+app.use(helmet())
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 // -------------------------
