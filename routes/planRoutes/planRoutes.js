@@ -1,19 +1,23 @@
 // routes/planRoutes.js
 import express from "express";
-
-// import { authenticateJWT } from "../../middlewares/authenticateJWT.js";
-import { createPlan, deletePlan, getPlanById, getPlans, togglePlanStatus, updatePlan } from "../../controller/planController/planController.js";
+import { planController } from "../../controller/index.js";
+// import { authenticateJWT } from "../middlewares/authenticateJWT.js";
 
 const router = express.Router();
 
-// Public routes
-router.get("/getall-plans", getPlans);
-router.get("/get-plan/:id", getPlanById);
+// -------------------------
+// 📌 Public routes
+// -------------------------
+router.get("/getall-plans", planController.getPlans);        // GET /api/plans
+router.get("/:id", planController.getPlanById);  // GET /api/plans/:id
 
-// Admin routes (you can add auth middleware here later)
-router.post("/create-plan",  createPlan);
-router.put("/update-plan/:id", updatePlan);
-router.delete("/:id", deletePlan);
-router.patch("/:id/toggle", togglePlanStatus);
+// -------------------------
+// 📌 Admin routes
+// -------------------------
+// Add `authenticateJWT` (or your admin middleware) when ready
+router.post("/create-plan", planController.createPlan);             // POST /api/plans
+router.put("/update-plan/:id", planController.updatePlan);           // PUT /api/plans/:id
+router.delete("/delete-plan/:id", planController.deletePlan);        // DELETE /api/plans/:id
+router.patch("/:id/toggle", planController.togglePlanStatus); // PATCH /api/plans/:id/toggle
 
 export default router;
