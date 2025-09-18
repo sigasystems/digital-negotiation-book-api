@@ -1,184 +1,125 @@
 // controllers/planController.js
+import { successResponse, errorResponse } from "../../handlers/responseHandler.js";
+import { asyncHandler } from "../../handlers/asyncHandler.js";
+import { planController } from "../index.js";
+import Plan from "../../model/planModel/planModel.js";
 
-import Plan from "../../model/planModel.js";
+export const createPlan = asyncHandler(async (req, res) => {
+  const {
+    key,
+    name,
+    description,
+    priceMonthly,
+    priceYearly,
+    currency,
+    billingCycle,
+    maxUsers,
+    maxProducts,
+    maxOffers,
+    maxBuyers,
+    features,
+    trialDays,
+    isDefault,
+    isActive,
+    sortOrder,
+  } = req.body;
 
-
-// @desc Create a new plan
-// @route POST /api/plans
-// @access Admin
-// controllers/planController.js
-
-/**
- * Create a new plan
- */
-export const createPlan = async (req, res) => {
-  try {
-    const {
-      key,
-      name,
-      description,
-      priceMonthly,
-      priceYearly,
-      currency,
-      billingCycle,
-      maxUsers,
-      maxProducts,
-      maxOffers,
-      maxBuyers,
-      features,
-      trialDays,
-      isDefault,
-      isActive,
-      sortOrder,
-    } = req.body;
-
-    // ✅ Validate required fields
-    if (!key || !name) {
-      return res.status(400).json({ message: "Key and Name are required." });
-    }
-
-    // ✅ Check if plan already exists
-    const existing = await Plan.findOne({ where: { key } });
-    if (existing) {
-      return res.status(400).json({ message: `Plan with key "${key}" already exists.` });
-    }
-
-    // ✅ Create new plan
-    const plan = await Plan.create({
-      key,
-      name,
-      description,
-      priceMonthly,
-      priceYearly,
-      currency,
-      billingCycle,
-      maxUsers,
-      maxProducts,
-      maxOffers,
-      maxBuyers,
-      features,
-      trialDays,
-      isDefault,
-      isActive,
-      sortOrder,
-    });
-
-    return res.status(201).json({ message: "Plan created succesfully!!!" });
-  } catch (error) {
-    console.error("Error creating plan:", error);
-    return res.status(500).json({ message: "Internal server error", error: error.message });
+  // ✅ Validate required fields
+  if (!key || !name) {
+    return errorResponse(res, 400, "Key and Name are required.");
   }
-};
 
-// @desc Get all plans (optionally filter by active)
-// @route GET /api/plans
-// @access Public (for showing available plans)
-export const getPlans = async (req, res) => {
-  try {
-    // const { activeOnly } = req.query;
-    // const filter = activeOnly ? { isActive: true } : {};
-    // const plans = await Plan.find(filter).sort({ sortOrder: 1 });
-    // Fetch plans from DB
-    const plans = await Plan.findAll();
-        res.status(201).json({ message: "Get all plans sucesfully" ,plans });
-
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  // ✅ Check if plan already exists
+  const existing = await Plan.findOne({ where: { key } });
+  if (existing) {
+    return errorResponse(res, 400, `Plan with key "${key}" already exists.`);
   }
-};
 
+  // ✅ Create new plan
+  const plan = await Plan.create({
+    key,
+    name,
+    description,
+    priceMonthly,
+    priceYearly,
+    currency,
+    billingCycle,
+    maxUsers,
+    maxProducts,
+    maxOffers,
+    maxBuyers,
+    features,
+    trialDays,
+    isDefault,
+    isActive,
+    sortOrder,
+  });
 
-/**
- * @desc   Get single plan by ID
- * @route  GET /api/plans/:id
- * @access Public
- */
-export const getPlanById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const plan = await Plan.findByPk(id);
+  return successResponse(res, 201, "Plan created successfully!", plan);
+});
 
-    if (!plan) {
-      return res.status(404).json({ message: "Plan not found" });
-    }
+export const getPlans = asyncHandler(async (req, res) => {
+  const plans = await Plan.findAll();
+  return successResponse(res, 200, "Plans fetched successfully", plans);
+});
 
-    return res.status(200).json(plan);
-  } catch (error) {
-    console.error("Error fetching plan:", error);
-    return res.status(500).json({ message: error.message });
+export const getPlanById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const plan = await Plan.findByPk(id);
+
+  if (!plan) {
+    return errorResponse(res, 404, "Plan not found");
   }
-};
 
-/**
- * @desc   Update plan
- * @route  PUT /api/plans/:id
- * @access Admin
- */
-export const updatePlan = async (req, res) => {
-  try {
-    const { id } = req.params;
+  return successResponse(res, 200, "Plan fetched successfully", plan);
+});
 
-    const [updatedRows] = await Plan.update(req.body, {
-      where: { id },
-      returning: true, // works in Postgres
-    });
+export const updatePlan = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-    if (updatedRows === 0) {
-      return res.status(404).json({ message: "Plan not found" });
-    }
+  const [updatedRows] = await Plan.update(req.body, {
+    where: { id },
+    returning: true, // PostgreSQL support
+  });
 
-    const updatedPlan = await Plan.findByPk(id);
-    return res.json(updatedPlan);
-  } catch (error) {
-    console.error("Error updating plan:", error);
-    return res.status(400).json({ message: error.message });
+  if (updatedRows === 0) {
+    return errorResponse(res, 404, "Plan not found");
   }
-};
 
-/**
- * @desc   Delete plan
- * @route  DELETE /api/plans/:id
- * @access Admin
- */
-export const deletePlan = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deletedRows = await Plan.destroy({ where: { id } });
+  const updatedPlan = await Plan.findByPk(id);
+  return successResponse(res, 200, "Plan updated successfully", updatedPlan);
+});
 
-    if (deletedRows === 0) {
-      return res.status(404).json({ message: "Plan not found" });
-    }
+export const deletePlan = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const deletedRows = await Plan.destroy({ where: { id } });
 
-    return res.json({ message: "Plan deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting plan:", error);
-    return res.status(500).json({ message: error.message });
+  if (deletedRows === 0) {
+    return errorResponse(res, 404, "Plan not found");
   }
-};
 
-/**
- * @desc   Toggle plan active status
- * @route  PATCH /api/plans/:id/toggle
- * @access Admin
- */
-export const togglePlanStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const plan = await Plan.findByPk(id);
+  return successResponse(res, 200, "Plan deleted successfully");
+});
 
-    if (!plan) {
-      return res.status(404).json({ message: "Plan not found" });
-    }
+export const togglePlanStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const plan = await Plan.findByPk(id);
 
-    plan.isActive = !plan.isActive;
-    await plan.save();
-
-    return res.json({
-      message: `Plan is now ${plan.isActive ? "active" : "inactive"}`,
-      plan,
-    });
-  } catch (error) {
-    console.error("Error toggling plan status:", error);
-    return res.status(500).json({ message: error.message });
+  if (!plan) {
+    return errorResponse(res, 404, "Plan not found");
   }
-};
+
+  plan.isActive = !plan.isActive;
+  await plan.save();
+
+  return successResponse(
+    res,
+    200,
+    `Plan is now ${plan.isActive ? "active" : "inactive"}`,
+    plan
+  );
+});
+
+
+
+export default planController;
