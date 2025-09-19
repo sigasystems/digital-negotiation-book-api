@@ -41,7 +41,6 @@ const BusinessOwner = sequelize.define(
       allowNull: true,
       unique: true,
     },
-
     country: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -64,19 +63,29 @@ const BusinessOwner = sequelize.define(
     },
 
     status: {
-      type: DataTypes.ENUM("active", "inactive", "suspended"),
+      type: DataTypes.ENUM("active", "inactive"),
       defaultValue: "active",
     },
 
-    isVerified: {
+    is_deleted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false, // false = not deleted, true = soft deleted
+    },
+
+    is_verified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    is_approved:
+    {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    }
   },
   {
     tableName: "business_owners",
     timestamps: true, // Sequelize manages createdAt & updatedAt
-    paranoid: true,   // adds deletedAt for soft delete
+    paranoid: true, // adds deletedAt for soft delete
     indexes: [
       { unique: true, fields: ["email"] },
       { unique: true, fields: ["registrationNumber"] },

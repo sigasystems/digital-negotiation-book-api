@@ -5,10 +5,10 @@ import helmet from "helmet";
 import planRoutes from "./routes/planRoutes/plan.routes.js";
 import authRoutes from "./routes/authRoutes/auth.routes.js"
 import paymentRoutes from "./routes/paymentRoutes/payment.routes.js"
-import businessOwnerRoutes from "./routes/businessOwnerRoutes/businessOwnerRoutes.js"
+import superadminRoutes from "./routes/superadminRoutes/superadmin.routes.js"
 
 
-businessOwnerRoutes
+
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
 import cookieParser from "cookie-parser";
 
@@ -30,7 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth",authRoutes)
 app.use("/api/plans", planRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use("/api/business", businessOwnerRoutes);
+app.use("/api/superadmin", superadminRoutes);
 
 
 
