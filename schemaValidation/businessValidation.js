@@ -25,7 +25,7 @@ export const businessOwnerSchema = z.object({
 
   country: z.string().min(2, { message: "Country is required" }),
   state: z.string().optional(),
-  city: z.string().optional(),
+  city: z.string().optional(), 
   address: z.string().optional(),
   postalCode: z.string().optional(),
 
