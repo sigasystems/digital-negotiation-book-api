@@ -4,6 +4,7 @@
   import * as authController from "./authControllers/auth.controller.js"
   import * as paymentController from "./paymentController/payment.controller.js"
   import * as businessOwnerController from "./superadminController/sa.businessowner.controller.js"
+  import * as businessOwnerControllers from "./businessOwnerControllers/businessOwner.controllers.js"
 
   // Later you can add more controllers like:
   // import * as userController from "./userController.js";
@@ -14,5 +15,6 @@
     // userController,
     authController,
     paymentController,
-    businessOwnerController
+    businessOwnerController,
+    businessOwnerControllers
   };

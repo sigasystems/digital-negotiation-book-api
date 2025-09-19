@@ -6,7 +6,7 @@ import planRoutes from "./routes/planRoutes/plan.routes.js";
 import authRoutes from "./routes/authRoutes/auth.routes.js"
 import paymentRoutes from "./routes/paymentRoutes/payment.routes.js"
 import superadminRoutes from "./routes/superadminRoutes/superadmin.routes.js"
-
+import businessOwnersRoutes from "./routes/businessOwnersRoutes/business.owner.routes.js"
 
 
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
@@ -31,6 +31,7 @@ app.use("/api/auth",authRoutes)
 app.use("/api/plans", planRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/superadmin", superadminRoutes);
+app.use("/api/business-owner",businessOwnersRoutes)
 
 
 
