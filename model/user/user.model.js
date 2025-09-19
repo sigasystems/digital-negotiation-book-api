@@ -21,10 +21,6 @@ const User = sequelize.define("User", {
       is: /^[A-Za-z\s'-]{2,50}$/,
     },
   },
-  company_name: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-  },
   email: {
     type: DataTypes.TEXT,
     allowNull: false,
@@ -33,21 +29,6 @@ const User = sequelize.define("User", {
       isEmail: true,
     },
   },
-  country_code: {
-    type: DataTypes.STRING(5),
-    allowNull: false,
-    validate: {
-      is: /^\+[1-9]\d{0,3}$/,
-    },
-  },
-  phone_number: {
-  type: DataTypes.STRING(15),
-  allowNull: false,
-  unique: true,
-  validate: {
-    is: /^[0-9]{6,14}$/,
-  },
-},
   password_hash: {
     type: DataTypes.TEXT,
     allowNull: false,
@@ -70,11 +51,7 @@ const User = sequelize.define("User", {
     {
       unique: true,
       fields: ["email"],
-    },
-    {
-      unique: true,
-      fields: ["phone_number"],
-    },
+    }
   ],
 });
 
