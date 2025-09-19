@@ -7,7 +7,7 @@ const router = express.Router()
 
 const {register, login, refreshTokenRotation} = authController
 
-router.post('/register', rateLimiter, register)
+// router.post('/register', rateLimiter, register)
 router.post('/login', rateLimiter, login)
 router.post('/refresh-token', rateLimiter, authenticateJWT, refreshTokenRotation)
 

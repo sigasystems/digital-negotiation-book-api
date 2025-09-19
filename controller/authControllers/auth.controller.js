@@ -68,37 +68,32 @@ export const login = asyncHandler(async (req, res) => {
   const { email, password } = parsedData.data;
 
   // 2. Find user
-  const user = await User.findOne({ where: { email } });
+  let user = await User.findOne({ where: { email } });
+
+  // 3. If user doesn't exist, create one automatically
   if (!user) {
-    return errorResponse(res, 401, "Invalid email or password. New to DNB please register first");
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    user = await User.create({
+      email,
+      password_hash: hashedPassword,
+    });
+  } else {
+    // 4. Compare password
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return errorResponse(res, 401, "Invalid email or password");
+    }
   }
 
-  // 3. Compare password
-  const isMatch = await bcrypt.compare(password, user.password_hash);
-  if (!isMatch) {
-    return errorResponse(res, 401, "Invalid email or password. New to DNB please register first");
-  }
-
-  // 4. Create tokens
+  // 5. Create tokens
   const payload = { id: user.id, email: user.email };
-
-  const accessToken = accessTokenGenerator(payload)
-
-  refreshTokenGenerator(res, payload)
+  const accessToken = accessTokenGenerator(payload);
+  refreshTokenGenerator(res, payload);
 
   // 6. Respond with access token and user info
   return successResponse(res, 200, "Login successful!", {
-    accessToken,
-    user: {
-      id: user.id,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      company_name: user.company_name,
-      country_code: user.country_code,
-      phone_number: user.phone_number,
-      created_at: user.created_at,
-    },
+    accessToken
   });
 });
 

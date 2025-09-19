@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../../config/db.js";
+import User from "../user/user.model.js";
 
 const BusinessOwner = sequelize.define(
   "BusinessOwner",
@@ -8,6 +9,25 @@ const BusinessOwner = sequelize.define(
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
+    },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: User,
+        key: "id",
+      },
+      onDelete: "CASCADE",
+    },
+
+    // Personal info from User table
+    first_name: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    last_name: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
 
     email: {
@@ -28,11 +48,6 @@ const BusinessOwner = sequelize.define(
 
     businessName: {
       type: DataTypes.STRING,
-      allowNull: false,
-    },
-
-    businessType: {
-      type: DataTypes.ENUM("wholesaler", "retailer", "farmer", "exporter"),
       allowNull: false,
     },
 
@@ -69,28 +84,32 @@ const BusinessOwner = sequelize.define(
 
     is_deleted: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false, // false = not deleted, true = soft deleted
+      defaultValue: false,
     },
 
     is_verified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
-    is_approved:
-    {
+    is_approved: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     }
   },
   {
     tableName: "business_owners",
-    timestamps: true, // Sequelize manages createdAt & updatedAt
-    paranoid: true, // adds deletedAt for soft delete
+    timestamps: true,
+    paranoid: true,
     indexes: [
       { unique: true, fields: ["email"] },
       { unique: true, fields: ["registrationNumber"] },
+      { fields: ["userId"] },
     ],
   }
 );
+
+// Associations
+User.hasOne(BusinessOwner, { foreignKey: "userId", as: "businessOwner" });
+BusinessOwner.belongsTo(User, { foreignKey: "userId", as: "user" });
 
 export default BusinessOwner;
