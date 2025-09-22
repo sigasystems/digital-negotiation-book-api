@@ -1,7 +1,7 @@
 // controllers/planController.js
 import { successResponse, errorResponse } from "../../handlers/responseHandler.js";
 import { asyncHandler } from "../../handlers/asyncHandler.js";
-import Plan from "../../model/planModel/plan.model.js";
+import {Plan} from "../../model/index.js";
 import { z } from "zod";
 
 export const createPlanSchema = z.object({

@@ -1,5 +1,5 @@
 import { asyncHandler } from "../../handlers/asyncHandler.js";
-import Payment from "../../model/paymentModel/payment.model.js";
+import { Payment } from "../../model/index.js";
 import { successResponse, errorResponse } from "../../handlers/responseHandler.js";
 import z from "zod";
 import { paymentSchema } from "../../schemaValidation/paymentValidation.js";
