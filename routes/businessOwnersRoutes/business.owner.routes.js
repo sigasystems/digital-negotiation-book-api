@@ -6,7 +6,7 @@ const router = express.Router()
 
 const {becomeBusinessOwner, getAllBuyers, getBuyerById, searchBuyers} = businessOwnerControllers
 
-router.post('/become-business-owner', becomeBusinessOwner)
+router.post('/become-business-owner',authenticateJWT, becomeBusinessOwner)
 router.get("/get-all-buyers",authenticateJWT, getAllBuyers)
 router.get("/get-buyer/:id",authenticateJWT, getBuyerById)
 router.get("/:ownerId/buyers/search",authenticateJWT, searchBuyers);

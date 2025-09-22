@@ -97,11 +97,17 @@ const Buyer = sequelize.define(
       defaultValue: false,
       comment: "Verified by business owner or platform admin",
     },
+    isDeleted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      comment: "Verified by business owner or platform admin",
+    }
   },
   {
     tableName: "buyers",
     timestamps: true, // createdAt & updatedAt
-    paranoid: true,   // adds deletedAt
+    paranoid: false,  // adds deletedAt
+    underscored: false, // this makes Sequelize use snake_case automatically
     indexes: [
       { fields: ["ownerId"] },
       { unique: true, fields: ["registrationNumber"] },

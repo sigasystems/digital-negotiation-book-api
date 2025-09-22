@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-export const buyerSchemaValidation = z.object({
+export const buyerSchema = z.object({
   ownerId: z.string().uuid({ message: "Owner ID must be a valid UUID" }),
 
-  // 🏢 Company Identity
+  // Company Identity
   buyersCompanyName: z
     .string()
     .min(2, { message: "Company name must be at least 2 characters long" })
@@ -16,7 +16,7 @@ export const buyerSchemaValidation = z.object({
 
   taxId: z.string().optional(),
 
-  // 👤 Primary Contact Person
+  // Primary Contact Person
   contactName: z
     .string()
     .min(2, { message: "Contact name must be at least 2 characters long" })
@@ -41,14 +41,14 @@ export const buyerSchemaValidation = z.object({
     })
     .optional(),
 
-  // 🌍 Address Info
+  // Address Info
   country: z.string().min(2, { message: "Country is required" }),
   state: z.string().optional(),
   city: z.string().optional(),
   address: z.string().optional(),
   postalCode: z.string().optional(),
 
-  // ⚙️ System fields
+  // System fields
   status: z
     .enum(["active", "inactive", "suspended"], {
       message: "Status must be active, inactive, or suspended",
@@ -56,7 +56,20 @@ export const buyerSchemaValidation = z.object({
     .default("active"),
 
   isVerified: z.boolean().default(false),
+  isDeleted: z.boolean().default(false),
+
+  // Timestamp fields
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+  deletedAt: z.coerce.date().nullable().optional(),
 });
 
-// ✅ For updates (partial fields allowed)
-export const updateBuyerSchema = buyerSchemaValidation.partial();
+// ✅ For search queries — all optional
+export const buyerSearchSchemaValidation = z.object({
+  country: z.string().min(1, "Country cannot be empty").optional(),
+  status: z.enum(["active", "inactive"]).optional(),
+  isVerified: z.boolean().optional(),
+});
+
+//  For updates (partial fields allowed)
+export const buyerSchemaValidation = buyerSchema.partial();
