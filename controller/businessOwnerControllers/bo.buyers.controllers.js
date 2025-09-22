@@ -2,14 +2,21 @@ import {buyerSchema} from "../../schemaValidation/buyerValidation.js"
 import { Buyer, BusinessOwner } from "../../model/index.js";
 import { successResponse, errorResponse } from "../../handlers/responseHandler.js";
 import { asyncHandler } from "../../handlers/asyncHandler.js";
+import { authorizeRoles } from "../../utlis/authorizeRoles.js";
 
-// 1️⃣ Add Buyer
+// 1. Add Buyer
 export const addBuyer = asyncHandler(async (req, res) => {
   const parsedData = buyerSchema.safeParse(req.body);
   if (!parsedData.success) {
     const errors = parsedData.error.issues.map((i) => i.message);
     return errorResponse(res, 400, errors.join(", "));
   }
+
+   try {
+      authorizeRoles(req, ["business_owner"]);
+    } catch (err) {
+      return errorResponse(res, err.statusCode || 403, err.message);
+    }
 
   const { ownerId, registrationNumber, contactEmail } = parsedData.data;
 
@@ -41,8 +48,13 @@ export const addBuyer = asyncHandler(async (req, res) => {
   return successResponse(res, 201, "Buyer added successfully", newBuyer);
 });
 
-// 2️⃣ Soft Delete Buyer
+// 2. Soft Delete Buyer
 export const deleteBuyer = asyncHandler(async (req, res) => {
+   try {
+      authorizeRoles(req, ["business_owner"]);
+    } catch (err) {
+      return errorResponse(res, err.statusCode || 403, err.message);
+    }
   const  buyerId  = req.params.id;
 
   const buyer = await Buyer.findByPk(buyerId);
@@ -55,8 +67,13 @@ export const deleteBuyer = asyncHandler(async (req, res) => {
   return successResponse(res, 200, "Buyer deleted successfully");
 });
 
-// 3️⃣ Activate Buyer
+// 3. Activate Buyer
 export const activateBuyer = asyncHandler(async (req, res) => {
+   try {
+      authorizeRoles(req, ["business_owner"]);
+    } catch (err) {
+      return errorResponse(res, err.statusCode || 403, err.message);
+    }
   const  id  = req.params.id;
 
   const buyer = await Buyer.findByPk(id);
@@ -69,8 +86,13 @@ export const activateBuyer = asyncHandler(async (req, res) => {
   return successResponse(res, 200, "Buyer activated successfully", buyer);
 });
 
-// 4️⃣ Deactivate Buyer
+// 4. Deactivate Buyer
 export const deactivateBuyer = asyncHandler(async (req, res) => {
+   try {
+      authorizeRoles(req, ["business_owner"]);
+    } catch (err) {
+      return errorResponse(res, err.statusCode || 403, err.message);
+    }
   const  id  = req.params.id;
 
   const buyer = await Buyer.findByPk(id);
@@ -84,6 +106,11 @@ export const deactivateBuyer = asyncHandler(async (req, res) => {
 });
 
 export const editBuyer = asyncHandler(async (req, res) => {
+   try {
+      authorizeRoles(req, ["business_owner"]);
+    } catch (err) {
+      return errorResponse(res, err.statusCode || 403, err.message);
+    }
   const  id  = req.params.id;
 
   // Validate partial input

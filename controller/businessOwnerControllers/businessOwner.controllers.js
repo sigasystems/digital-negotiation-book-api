@@ -5,6 +5,7 @@ import {BusinessOwner, Buyer, User} from "../../model/index.js";
 import { businessOwnerSchema } from "../../schemaValidation/businessValidation.js";
 import { buyerSchema, buyerSearchSchemaValidation } from "../../schemaValidation/buyerValidation.js";
 import { accessTokenGenerator, refreshTokenGenerator } from "../../utlis/tokenGenerator.js";
+import { authorizeRoles } from "../../utlis/authorizeRoles.js";
 import { Op } from "sequelize";
 import { z } from "zod";
 
@@ -50,7 +51,7 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
     return errorResponse(res, 409, "Business owner already registered for this user.");
   }
 
-  // 5. ✅ Check if registration number already exists
+  // 5. Check if registration number already exists
   if (registrationNumber) {
     const existingReg = await BusinessOwner.findOne({ where: { registrationNumber } });
     if (existingReg) {
@@ -115,8 +116,13 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
   });
 });
 
-// 📌 Get all buyers
+// Get all buyers
 export const getAllBuyers = asyncHandler(async (req, res) => {
+   try {
+      authorizeRoles(req, ["business_owner"]);
+    } catch (err) {
+      return errorResponse(res, err.statusCode || 403, err.message);
+    }
   const  ownerId = req.user.id;
 
   // Validate ownerId with Zod
@@ -137,8 +143,13 @@ export const getAllBuyers = asyncHandler(async (req, res) => {
   return successResponse(res, 200, "Buyers fetched successfully", buyers);
 });
 
-// 📌 Get buyer by ID
+// Get buyer by ID
 export const getBuyerById = asyncHandler(async (req, res) => {
+   try {
+      authorizeRoles(req, ["business_owner"]);
+    } catch (err) {
+      return errorResponse(res, err.statusCode || 403, err.message);
+    }
   const  buyerId  = req.params.id;
   const ownerId = req.user.id
 
@@ -160,8 +171,13 @@ export const getBuyerById = asyncHandler(async (req, res) => {
   return successResponse(res, 200, "Buyer fetched successfully", buyer);
 });
 
-// 📌 Advanced search on buyers
+// Advanced search on buyers
 export const searchBuyers = asyncHandler(async (req, res) => {
+   try {
+      authorizeRoles(req, ["business_owner"]);
+    } catch (err) {
+      return errorResponse(res, err.statusCode || 403, err.message);
+    }
   const { ownerId } = req.params;
   const { country, status, isVerified } = req.query;
 

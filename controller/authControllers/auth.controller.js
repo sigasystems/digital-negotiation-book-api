@@ -87,7 +87,15 @@ export const login = asyncHandler(async (req, res) => {
     }
   }
 
-  // 5. Determine token payload
+  // 5. Fetch role details from roles table
+  const roleDetails = await Role.findOne({
+    where: { id: user.roleId },
+    attributes: ["name", "createdAt", "updatedAt", "isActive"],
+  });
+
+  const userRoleName = roleDetails?.name || "guest";
+
+  // 6. Determine token payload
   let tokenPayload;
   if (user.roleId === 2) {
     // Business owner
@@ -95,25 +103,19 @@ export const login = asyncHandler(async (req, res) => {
     if (!businessOwner) {
       return errorResponse(res, 404, "Business owner record not found for this user");
     }
-    tokenPayload = { id: businessOwner.id, email: user.email };
+    tokenPayload = { id: businessOwner.id, email: user.email, userRole: userRoleName, };
   } else {
-    tokenPayload = { id: user.id, email: user.email };
+    tokenPayload = { id: user.id, email: user.email, userRole: userRoleName, };
   }
 
-  // 6. Create tokens
+  // 7. Create tokens
   const accessToken = accessTokenGenerator(tokenPayload);
   refreshTokenGenerator(res, tokenPayload);
-
-  // 7. Fetch role details from roles table
-  const roleDetails = await Role.findOne({
-    where: { id: user.roleId },
-    attributes: ["name", "createdAt", "updatedAt", "isActive"],
-  });
 
   // 8. Respond with access token and role info directly in data
   return successResponse(res, 200, "Login successful!", {
     accessToken,
-    userRole: roleDetails?.name || "guest",
+    userRole: userRoleName,
     userFirstName: user?.first_name || "",
     userLastName: user?.last_name || "",
     roleCreatedAt: roleDetails?.createdAt || null,
