@@ -3,6 +3,7 @@ import { Payment } from "../../model/index.js";
 import { successResponse, errorResponse } from "../../handlers/responseHandler.js";
 import z from "zod";
 import { paymentSchema } from "../../schemaValidation/paymentValidation.js";
+import { formatDate } from "../../utlis/dateFormatter.js";
 
 // Create a payment
 export const createPayment = asyncHandler(async (req, res) => {
@@ -11,7 +12,6 @@ export const createPayment = asyncHandler(async (req, res) => {
     const payment = await Payment.create({
       ...validatedData,
       paidAt: validatedData.status === "success" ? new Date() : null,
-
     });
     return successResponse(res, 201, "Payment created successfully", payment);
   } catch (error) {
@@ -30,7 +30,15 @@ export const createPayment = asyncHandler(async (req, res) => {
 // Get all payments
 export const getPayments = asyncHandler(async (req, res) => {
   const payments = await Payment.findAll({ include: ["User", "Plan"] });
-  successResponse(res, 201, "All payments fetched",payments);
+
+  // Map and format each payment
+  const formattedPayments = payments.map(payment => {
+    const p = payment.toJSON(); // convert Sequelize instance to plain object
+    p.createdAt = formatDate(p.createdAt); // only createdAt
+    // delete p.updatedAt;
+    return p;
+  });
+  successResponse(res, 201, "All payments fetched", formattedPayments);
 });
 
 // Get single payment
