@@ -99,7 +99,7 @@ const BusinessOwner = sequelize.define(
   {
     tableName: "business_owners",
     timestamps: true,
-    paranoid: true,
+    paranoid: false,
     indexes: [
       { unique: true, fields: ["email"] },
       { unique: true, fields: ["registrationNumber"] },

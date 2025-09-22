@@ -3,8 +3,16 @@ import { asyncHandler } from "../../handlers/asyncHandler.js";
 import { successResponse, errorResponse } from "../../handlers/responseHandler.js";
 import {BusinessOwner, Buyer, User} from "../../model/index.js";
 import { businessOwnerSchema } from "../../schemaValidation/businessValidation.js";
-import { buyerSchemaValidation } from "../../schemaValidation/buyerValidation.js";
+import { buyerSchema, buyerSearchSchemaValidation } from "../../schemaValidation/buyerValidation.js";
+import { accessTokenGenerator, refreshTokenGenerator } from "../../utlis/tokenGenerator.js";
 import { Op } from "sequelize";
+import { z } from "zod";
+
+const getBuyerParamsSchema = z.object({
+  ownerId: z.string().uuid({ message: "Invalid owner ID" }),
+  buyerId: z.string().uuid({ message: "Invalid buyer ID" }),
+});
+
 
 export const becomeBusinessOwner = asyncHandler(async (req, res) => {
   // 1. Get email from authenticated user (comes from token or body)
@@ -55,6 +63,7 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
     await existingUser.update({
       first_name: first_name || existingUser.first_name,
       last_name: last_name || existingUser.last_name,
+      roleId: 2 || existingUser.roleId
     });
   }
 
@@ -73,13 +82,18 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
     address,
     postalCode,
     status: "inactive",
-    is_verified: false,
+    is_verified: true,
     is_deleted: false,
-    is_approved: false,
+    is_approved: true,
   });
+
+  const payload = { id: newOwner.id, email: newOwner.email };
+  const accessToken = accessTokenGenerator(payload);
+  refreshTokenGenerator(res, payload);
 
   // 8. Respond with success
   return successResponse(res, 201, "Business owner created successfully!", {
+    accessToken,
     id: newOwner.id,
     first_name: newOwner.first_name,
     last_name: newOwner.last_name,
@@ -103,10 +117,10 @@ export const becomeBusinessOwner = asyncHandler(async (req, res) => {
 
 // 📌 Get all buyers
 export const getAllBuyers = asyncHandler(async (req, res) => {
-  const { ownerId } = req.params;
+  const  ownerId = req.user.id;
 
   // Validate ownerId with Zod
-  const parsedOwner = buyerSchemaValidation.pick({ ownerId: true }).safeParse({ ownerId });
+  const parsedOwner = buyerSchema.pick({ ownerId: true }).safeParse({ ownerId });
   if (!parsedOwner.success) {
     const errors = parsedOwner.error.issues.map((issue) => issue.message);
     return errorResponse(res, 400, errors.join(", "));
@@ -125,13 +139,11 @@ export const getAllBuyers = asyncHandler(async (req, res) => {
 
 // 📌 Get buyer by ID
 export const getBuyerById = asyncHandler(async (req, res) => {
-  const { ownerId, buyerId } = req.params;
+  const  buyerId  = req.params.id;
+  const ownerId = req.user.id
 
   // Validate params
-  const parsedParams = buyerSchemaValidation.pick({ ownerId: true, id: true }).safeParse({
-    ownerId,
-    id: buyerId,
-  });
+  const parsedParams = getBuyerParamsSchema.safeParse({ ownerId, buyerId });
   if (!parsedParams.success) {
     const errors = parsedParams.error.issues.map((issue) => issue.message);
     return errorResponse(res, 400, errors.join(", "));
@@ -154,7 +166,7 @@ export const searchBuyers = asyncHandler(async (req, res) => {
   const { country, status, isVerified } = req.query;
 
   // Validate query params using partial schema
-  const parsedQuery = buyerSchemaValidation
+  const parsedQuery = buyerSearchSchemaValidation
     .pick({ country: true, status: true, isVerified: true })
     .safeParse({ country, status, isVerified: isVerified ? isVerified === "true" : undefined });
 
@@ -180,5 +192,7 @@ export const searchBuyers = asyncHandler(async (req, res) => {
 
   const buyers = await Buyer.findAll({ where: filters });
 
-  return successResponse(res, 200, "Buyers filtered successfully", buyers);
+  const message = buyers?.length > 0 ? "Buyers filtered successfully" : "No buyer is registered with selected filters."
+
+  return successResponse(res, 200, message, buyers);
 });

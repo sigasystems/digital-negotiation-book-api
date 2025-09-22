@@ -2,7 +2,7 @@ import { successResponse, errorResponse } from "../../handlers/responseHandler.j
 import { asyncHandler } from "../../handlers/asyncHandler.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import User from "../../model/user/user.model.js";
+import {User, Role, BusinessOwner} from "../../model/index.js";
 import { registerSchemaValidation , loginSchemaValidation } from "../../schemaValidation/authValidation.js";
 import { refreshTokenGenerator , accessTokenGenerator } from "../../utlis/tokenGenerator.js";
 
@@ -77,6 +77,7 @@ export const login = asyncHandler(async (req, res) => {
     user = await User.create({
       email,
       password_hash: hashedPassword,
+      roleId: 6,
     });
   } else {
     // 4. Compare password
@@ -86,14 +87,38 @@ export const login = asyncHandler(async (req, res) => {
     }
   }
 
-  // 5. Create tokens
-  const payload = { id: user.id, email: user.email };
-  const accessToken = accessTokenGenerator(payload);
-  refreshTokenGenerator(res, payload);
+  // 5. Determine token payload
+  let tokenPayload;
+  if (user.roleId === 2) {
+    // Business owner
+    const businessOwner = await BusinessOwner.findOne({ where: { userId: user.id } });
+    if (!businessOwner) {
+      return errorResponse(res, 404, "Business owner record not found for this user");
+    }
+    tokenPayload = { id: businessOwner.id, email: user.email };
+  } else {
+    tokenPayload = { id: user.id, email: user.email };
+  }
 
-  // 6. Respond with access token and user info
+  // 6. Create tokens
+  const accessToken = accessTokenGenerator(tokenPayload);
+  refreshTokenGenerator(res, tokenPayload);
+
+  // 7. Fetch role details from roles table
+  const roleDetails = await Role.findOne({
+    where: { id: user.roleId },
+    attributes: ["name", "createdAt", "updatedAt", "isActive"],
+  });
+
+  // 8. Respond with access token and role info directly in data
   return successResponse(res, 200, "Login successful!", {
-    accessToken
+    accessToken,
+    userRole: roleDetails?.name || "guest",
+    userFirstName: user?.first_name || "",
+    userLastName: user?.last_name || "",
+    roleCreatedAt: roleDetails?.createdAt || null,
+    roleUpdatedAt: roleDetails?.updatedAt || null,
+    roleIsActive: roleDetails?.isActive ?? false,
   });
 });
 
