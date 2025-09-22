@@ -4,11 +4,10 @@ import { businessOwnerControllers } from "../../controller/index.js";
 
 const router = express.Router()
 
-const {becomeBusinessOwner, getAllBuyers, getBuyerById, searchBuyers} = businessOwnerControllers
 
-router.post('/become-business-owner',authenticateJWT, becomeBusinessOwner)
-router.get("/get-all-buyers",authenticateJWT, getAllBuyers)
-router.get("/get-buyer/:id",authenticateJWT, getBuyerById)
-router.get("/:ownerId/buyers/search",authenticateJWT, searchBuyers);
+router.post('/become-business-owner', businessOwnerControllers.becomeBusinessOwner)
+router.get("/get-all-buyers",authenticateJWT, businessOwnerControllers.getAllBuyers)
+router.get("/get-buyer/:id",authenticateJWT, businessOwnerControllers.getBuyerById)
+router.get("/:ownerId/buyers/search",authenticateJWT, businessOwnerControllers.searchBuyers);
 
 export default router
