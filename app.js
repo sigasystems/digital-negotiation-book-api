@@ -2,12 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
-import planRoutes from "./routes/planRoutes/plan.routes.js";
-import authRoutes from "./routes/authRoutes/auth.routes.js"
-import paymentRoutes from "./routes/paymentRoutes/payment.routes.js"
-import superadminRoutes from "./routes/superadminRoutes/superadmin.routes.js"
-import businessOwnersRoutes from "./routes/businessOwnersRoutes/business.owner.routes.js"
-import boBuyersRoutes from "./routes/businessOwnersRoutes/bo.buyers.routes.js"
+import { planRoutes, authRoutes, paymentRoutes, superadminRoutes, businessOwnersRoutes, boBuyersRoutes, offerDraftRoutes } from "./routes/index.js"
 
 
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
@@ -34,6 +29,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/superadmin", superadminRoutes);
 app.use("/api/business-owner",businessOwnersRoutes)
 app.use("/api/bo-buyer",boBuyersRoutes)
+app.use("/api/offer-draft", offerDraftRoutes)
 
 
 

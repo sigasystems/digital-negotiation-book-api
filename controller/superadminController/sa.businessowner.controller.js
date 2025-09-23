@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import { asyncHandler } from "../../handlers/asyncHandler.js";
 import { successResponse, errorResponse } from "../../handlers/responseHandler.js";
 import { BusinessOwner, Buyer } from "../../model/index.js";

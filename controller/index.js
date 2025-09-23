@@ -6,6 +6,7 @@
   import * as businessOwnerController from "./superadminController/sa.businessowner.controller.js"
   import * as businessOwnerControllers from "./businessOwnerControllers/businessOwner.controllers.js"
   import * as boBuyersControllers from "./businessOwnerControllers/bo.buyers.controllers.js"
+  import * as offerDraftControllers from "./offerControllers/offerDraft.controller.js"
 
   // Later you can add more controllers like:
   // import * as userController from "./userController.js";
@@ -18,5 +19,6 @@
     paymentController,
     businessOwnerController,
     businessOwnerControllers,
-    boBuyersControllers
+    boBuyersControllers,
+    offerDraftControllers
   };
