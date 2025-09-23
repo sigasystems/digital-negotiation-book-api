@@ -3,27 +3,7 @@ import { successResponse, errorResponse } from "../../handlers/responseHandler.j
 import { asyncHandler } from "../../handlers/asyncHandler.js";
 import {Plan} from "../../model/index.js";
 import { z } from "zod";
-
-export const createPlanSchema = z.object({
-  key: z.string().min(1, "Key is required"),
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  priceMonthly: z.number().nonnegative().optional(),
-  priceYearly: z.number().nonnegative().optional(),
-  currency: z.string().optional(),
-  billingCycle: z.enum(["monthly", "yearly"]).optional(),
-  maxUsers: z.number().int().nonnegative().optional(),
-  maxProducts: z.number().int().nonnegative().optional(),
-  maxOffers: z.number().int().nonnegative().optional(),
-  maxBuyers: z.number().int().nonnegative().optional(),
-  features: z.array(z.string()).optional(),
-  trialDays: z.number().int().nonnegative().optional(),
-  isDefault: z.boolean().optional(),
-  isActive: z.boolean().optional(),
-  sortOrder: z.number().int().optional(),
-});
-
-export const updatePlanSchema = createPlanSchema.partial(); 
+import { createPlanSchema } from "../../schemaValidation/createPlanSchema.js";
 
 export const createPlan = asyncHandler(async (req, res) => {
   const parsed = createPlanSchema.safeParse(req.body);
