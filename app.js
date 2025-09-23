@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
 import { planRoutes, authRoutes, paymentRoutes, superadminRoutes, businessOwnersRoutes, boBuyersRoutes, offerDraftRoutes } from "./routes/index.js"
+import productRoutes from "./routes/productRoutes/product.routes.js"
+import locationRoutes from "./routes/locationRoutes/location.routes.js"
 
 
 import { notFoundHandler, errorHandler } from "./handlers/index.js";
@@ -30,6 +32,8 @@ app.use("/api/superadmin", superadminRoutes);
 app.use("/api/business-owner",businessOwnersRoutes)
 app.use("/api/bo-buyer",boBuyersRoutes)
 app.use("/api/offer-draft", offerDraftRoutes)
+app.use("/api/product",productRoutes)
+app.use("/api/location",locationRoutes)
 
 
 
