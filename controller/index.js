@@ -1,4 +1,4 @@
-  // controllers/index.js
+// controllers/index.js
 
   import * as planController from "./planController/plan.controller.js"; // include full path + .js
   import * as authController from "./authControllers/auth.controller.js"
@@ -7,6 +7,8 @@
   import * as businessOwnerControllers from "./businessOwnerControllers/businessOwner.controllers.js"
   import * as boBuyersControllers from "./businessOwnerControllers/bo.buyers.controllers.js"
   import * as offerDraftControllers from "./offerControllers/offerDraft.controller.js"
+  import * as productController from "./productControllers/product.controller.js";
+import * as locationController from "./locationControllers/location.controller.js";
 
   // Later you can add more controllers like:
   // import * as userController from "./userController.js";
@@ -20,5 +22,7 @@
     businessOwnerController,
     businessOwnerControllers,
     boBuyersControllers,
-    offerDraftControllers
+    offerDraftControllers,
+  productController,
+  locationController,
   };
