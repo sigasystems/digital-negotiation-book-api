@@ -5,6 +5,7 @@ import Payment from "./payment.model.js";
 import BusinessOwner from "./businessOwner.model.js"
 import Buyer from "./buyers.model.js";
 import Role from "./roles.model.js";
+import Offer from "./offer.model.js";
 // (If you want associations later, you can add here)
 // Example: Plan.hasMany(Subscription);
 
@@ -15,5 +16,6 @@ export {
   Payment,
   BusinessOwner,
   Buyer,
-  Role
+  Role,
+  Offer
 };

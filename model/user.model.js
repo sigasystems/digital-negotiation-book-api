@@ -35,10 +35,6 @@ const User = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 6, // Provide a default role ID (e.g., guest)
-      references: {
-        model: Role,
-        key: "id",
-      },
     },
     created_at: {
       type: DataTypes.DATE,
@@ -58,6 +54,6 @@ const User = sequelize.define(
 
 // 🔗 Associations
 Role.hasMany(User, { foreignKey: "roleId", as: "users" });
-User.belongsTo(Role, { foreignKey: "roleId", as: "role" });
+User.belongsTo(Role, { foreignKey: "roleId", as: "role", onUpdate: "CASCADE", onDelete: "CASCADE", });
 
 export default User;
