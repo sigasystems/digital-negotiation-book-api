@@ -39,9 +39,9 @@ const Payment = sequelize.define("Payment", {
       allowNull: false,
       unique: true,
     },
-    paidAt: {
-      type: DataTypes.DATE,
-    },
+    // paidAt: {
+    //   type: DataTypes.DATE,
+    // },
   }, {
     timestamps: true,
   });

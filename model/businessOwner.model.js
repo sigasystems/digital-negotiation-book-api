@@ -40,10 +40,6 @@ const BusinessOwner = sequelize.define(
     phoneNumber: {
       type: DataTypes.STRING,
       allowNull: true,
-      validate: {
-        len: [10, 20],
-        is: /^[0-9+\-() ]*$/i,
-      },
     },
 
     businessName: {

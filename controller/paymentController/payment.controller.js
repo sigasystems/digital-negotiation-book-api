@@ -5,67 +5,126 @@ import z from "zod";
 import { paymentSchema } from "../../schemaValidation/paymentValidation.js";
 import { formatDate } from "../../utlis/dateFormatter.js";
 
-// Create a payment
+// ---------------- CREATE PAYMENT ----------------
 export const createPayment = asyncHandler(async (req, res) => {
   try {
-    const validatedData = paymentSchema.parse(req.body);
-    const payment = await Payment.create({
-      ...validatedData,
-      paidAt: validatedData.status === "success" ? new Date() : null,
-    });
-    return successResponse(res, 201, "Payment created successfully", payment);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return errorResponse(
-        res,
-        400,
-        "Validation failed",
-        error.issues.map((e) => e.message)
-      );
+    const parsed = paymentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const errors = parsed.error.issues.map((e) => ({
+        field: e.path.join("."),
+        message: e.message,
+      }));
+      return errorResponse(res, 400, "Validation Error", errors);
     }
-    return errorResponse(res, 500, "Something went wrong", error.message);
+    const payment = await Payment.create(parsed.data);
+    return successResponse(res,201,"Payment created successfully",payment.toJSON());
+  } catch (error) {
+    // Sequelize Unique Constraint Error
+    if (error.name === "SequelizeUniqueConstraintError") {
+      const fields = error.errors.map((e) => ({
+        field: e.path,
+        message: `${e.path} must be unique. "${e.value}" already exists.`,
+      }));
+      return errorResponse(res, 400, "Duplicate Value Error", fields);
+    }
+
+    // Sequelize Validation Error
+    if (error.name === "SequelizeValidationError") {
+      const fields = error.errors.map((e) => ({
+        field: e.path,
+        message: e.message,
+      }));
+      return errorResponse(res, 400, "Database Validation Error", fields);
+    }
+    // General error
+    return errorResponse(res, 500, "Internal Server Error", error.message);
   }
 });
 
-// Get all payments
+// ---------------- GET ALL PAYMENTS ----------------
 export const getPayments = asyncHandler(async (req, res) => {
-  const payments = await Payment.findAll({ include: ["User", "Plan"] });
+  try {
+    const payments = await Payment.findAll({ include: ["User", "Plan"] });
 
-  // Map and format each payment
-  const formattedPayments = payments.map(payment => {
-    const p = payment.toJSON(); // convert Sequelize instance to plain object
-    p.createdAt = formatDate(p.createdAt); // only createdAt
-    // delete p.updatedAt;
-    return p;
-  });
-  successResponse(res, 201, "All payments fetched", formattedPayments);
-});
+    const formattedPayments = payments.map((payment) => {
+      const p = payment.toJSON();
+      p.createdAt = formatDate(p.createdAt);
+      p.updatedAt = formatDate(p.updatedAt);
+      return p;
+    });
+    
+    return successResponse(res, 200, "Payments fetched successfully", {
+      total: formattedPayments.length,
+      payments: formattedPayments,
+    });
+  } catch (error) {
+    return errorResponse(res, 500, "Internal Server Error", error.message);
+  }
+});   
 
-// Get single payment
+// ---------------- GET PAYMENT BY ID ----------------
 export const getPaymentById = asyncHandler(async (req, res) => {
-  const payment = await Payment.findByPk(req.params.id, { include: ["User", "Plan"] });
-  if (!payment) return errorResponse(res, "Payment not found", 404);
-  successResponse(res, 201, payment, "Payment fetched successfully");
+  try {
+    const payment = await Payment.findByPk(req.params.id, {
+      include: ["User", "Plan"],
+    });
+
+    if (!payment) {
+      return errorResponse(res, 404, "Payment not found");
+    }
+
+    const p = payment.toJSON();
+    p.createdAt = formatDate(p.createdAt);
+    p.updatedAt = formatDate(p.updatedAt);
+
+    return successResponse(res, 200, "Payment fetched successfully", p);
+  } catch (error) {
+    return errorResponse(res, 500, "Internal Server Error", error.message);
+  }
 });
 
-// Update payment status
+// ---------------- UPDATE PAYMENT STATUS ----------------
 export const updatePaymentStatus = asyncHandler(async (req, res) => {
-  const { status } = req.body;
-  const payment = await Payment.findByPk(req.params.id);
-  if (!payment) return errorResponse(res, "Payment not found", 404);
+  try {
+    const statusSchema = z.enum(["pending", "success", "failed", "canceled"]);
+    const parsed = statusSchema.safeParse(req.body.status);
 
-  payment.status = status;
-  if (status === "success") payment.paidAt = new Date();
-  await payment.save();
+    if (!parsed.success) {
+      return errorResponse(res, 400, "Invalid payment status", [
+        { field: "status", message: "Must be one of pending, success, failed, canceled" },
+      ]);
+    }
 
-  successResponse(res, 201 ,payment, "Payment status updated");
+    const payment = await Payment.findByPk(req.params.id);
+    if (!payment) return errorResponse(res, 404, "Payment not found");
+
+    payment.status = parsed.data;
+    if (parsed.data === "success") {
+      payment.paidAt = new Date();
+    }
+    await payment.save();
+
+    const p = payment.toJSON();
+    p.createdAt = formatDate(p.createdAt);
+    p.updatedAt = formatDate(p.updatedAt);
+
+    return successResponse(res, 200, "Payment status updated successfully", p);
+  } catch (error) {
+    return errorResponse(res, 500, "Internal Server Error", error.message);
+  }
 });
 
-// Delete payment
+// ---------------- DELETE PAYMENT ----------------
 export const deletePayment = asyncHandler(async (req, res) => {
-  const payment = await Payment.findByPk(req.params.id);
-  if (!payment) return errorResponse(res, "Payment not found", 404);
+  try {
+    const payment = await Payment.findByPk(req.params.id);
+    if (!payment) return errorResponse(res, 404, "Payment not found");
 
-  await payment.destroy();
-  successResponse(res,201,  null, "Payment deleted successfully");
+    await payment.destroy();
+    return successResponse(res, 200, "Payment deleted successfully", {
+      id: req.params.id,
+    });
+  } catch (error) {
+    return errorResponse(res, 500, "Internal Server Error", error.message);
+  }
 });
