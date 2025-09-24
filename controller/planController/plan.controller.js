@@ -3,7 +3,7 @@ import { successResponse, errorResponse } from "../../handlers/responseHandler.j
 import { asyncHandler } from "../../handlers/asyncHandler.js";
 import {Plan} from "../../model/index.js";
 import { z } from "zod";
-import { createPlanSchema } from "../../schemaValidation/createPlanSchema.js";
+import { createPlanSchema, updatePlanSchema } from "../../schemaValidation/createPlanSchema.js";
 
 export const createPlan = asyncHandler(async (req, res) => {
   const parsed = createPlanSchema.safeParse(req.body);
