@@ -60,3 +60,26 @@ export const generateEmailTemplate = ({ title, subTitle, body, footer }) => {
     </html>
   `;
 };
+
+export const sendEmailWithRetry = async (transporter, mailOptions, maxAttempts = 2) => {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await transporter.sendMail(mailOptions);
+      return { success: true };
+    } catch (err) {
+      lastError = err;
+      console.error(`Attempt ${attempt} - Failed to send email:`, err.message);
+
+      // Optional: wait a bit before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  return {
+    success: false,
+    error: lastError,
+  };
+};
+

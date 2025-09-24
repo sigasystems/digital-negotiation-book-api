@@ -8,7 +8,7 @@ const {addBuyer, deleteBuyer, activateBuyer, deactivateBuyer, editBuyer} = boBuy
 
 router.post("/add-buyer",authenticateJWT, addBuyer)
 router.delete("/delete-buyer/:id",authenticateJWT, deleteBuyer)
-router.patch("/acvtivate-buyer/:id",authenticateJWT, activateBuyer)
+router.patch("/activate-buyer/:id",authenticateJWT, activateBuyer)
 router.patch("/deactivate-buyer/:id",authenticateJWT, deactivateBuyer)
 router.patch("/edit-buyer/:id",authenticateJWT, editBuyer)
 
