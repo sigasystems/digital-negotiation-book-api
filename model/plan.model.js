@@ -15,7 +15,7 @@ const Plan = sequelize.define(
       allowNull: false,
       unique: true,
       validate: {
-        isIn: [["trial", "basic", "pro"]], // extendable
+        isIn: [["trial", "basic", "pro" ,"custom"]], // extendable
       },
     },
 

@@ -4,8 +4,10 @@ import { asyncHandler } from "../../handlers/asyncHandler.js";
 import {Plan} from "../../model/index.js";
 import { z } from "zod";
 import { createPlanSchema, updatePlanSchema } from "../../schemaValidation/createPlanSchema.js";
+import { authorizeRoles } from "../../utlis/authorizeRoles.js";
 
 export const createPlan = asyncHandler(async (req, res) => {
+      authorizeRoles(req, ["super_admin"]);
   const parsed = createPlanSchema.safeParse(req.body);
   if (!parsed.success) {
     return errorResponse(res, 400, parsed.error.issues.map(e => e.message).join(", "));
@@ -34,6 +36,7 @@ export const getPlanById = asyncHandler(async (req, res) => {
 });
 
 export const updatePlan = asyncHandler(async (req, res) => {
+   authorizeRoles(req, ["super_admin"]);
   const { id } = req.params;
   const parsed = updatePlanSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -49,6 +52,7 @@ export const updatePlan = asyncHandler(async (req, res) => {
 });
 
 export const deletePlan = asyncHandler(async (req, res) => {
+   authorizeRoles(req, ["super_admin"]);
   const { id } = req.params;
   const deletedRows = await Plan.destroy({ where: { id } });
   if (deletedRows === 0) return errorResponse(res, 404, "Plan not found");
@@ -56,6 +60,7 @@ export const deletePlan = asyncHandler(async (req, res) => {
 });
 
 export const togglePlanStatus = asyncHandler(async (req, res) => {
+   authorizeRoles(req, ["super_admin"]);
   const { id } = req.params;
   const plan = await Plan.findByPk(id);
   if (!plan) return errorResponse(res, 404, "Plan not found");
