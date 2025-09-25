@@ -1,11 +1,13 @@
 import {buyerSchema} from "../../schemaValidation/buyerValidation.js"
-import { Buyer, BusinessOwner } from "../../model/index.js";
+import { Buyer, BusinessOwner, User } from "../../model/index.js";
 import { successResponse, errorResponse } from "../../handlers/responseHandler.js";
 import { asyncHandler } from "../../handlers/asyncHandler.js";
 import { authorizeRoles } from "../../utlis/authorizeRoles.js";
 import transporter from "../../config/nodemailer.js"
 import { generateEmailTemplate } from "../../utlis/emailTemplate.js";
 import { sendEmailWithRetry } from "../../utlis/emailTemplate.js";
+import bcrypt from "bcrypt";
+import generateSecurePassword from "../../utlis/genarateSecurePassword.js";
 
 // 1. Add Buyer
 export const addBuyer = asyncHandler(async (req, res) => {
@@ -21,10 +23,11 @@ export const addBuyer = asyncHandler(async (req, res) => {
       return errorResponse(res, err.statusCode || 403, err.message);
     }
 
-  const { registrationNumber, contactEmail } = parsedData.data;
-  const id = req.user.id
+  const { registrationNumber, contactEmail, contactName } = parsedData.data;
+  const ownerId = req.user.id
+
   // Ensure owner exists
-  const owner = await BusinessOwner.findByPk(id);
+  const owner = await BusinessOwner.findByPk(ownerId);
   if (!owner) {
     return errorResponse(res, 404, "Business owner not found");
   }
@@ -43,26 +46,61 @@ export const addBuyer = asyncHandler(async (req, res) => {
     return errorResponse(res, 409, "Contact email already in use");
   }
 
+  // 1. Autogenerate password
+  const password = generateSecurePassword(12);
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  let firstName = contactName || contactEmail;
+  let lastName = "";
+
+if (contactName) {
+  const nameParts = contactName.trim().split(" ");
+  firstName = nameParts.shift(); // first word
+  lastName = nameParts.join(" "); // the rest
+}
+
+// Create user
+const user = await User.create({
+  email: contactEmail,
+  password_hash: hashedPassword,
+  roleId: 3,
+  first_name: firstName,
+  last_name: lastName || null, // allow null if no last name
+});
+
+  // 3. Create Buyer record
   const newBuyer = await Buyer.create({
     ...parsedData.data,
+    userId: user.id,
     isVerified: true,
   });
+
+  const loginUrl = `${process.env.FRONTEND_URL}/login`;
 
    const mailOptions = {
     from: `"${owner?.businessName}" <${process.env.EMAIL_USER}>`,
     to: newBuyer.contactEmail,
-    subject: `Buyer added to ${owner?.businessName}`,
+    subject: `Buyer account created for ${owner?.businessName}`,
     html: generateEmailTemplate({
       title: `Welcome to ${owner?.businessName} 🎉`,
-      subTitle: "You have been added as a buyer.",
+      subTitle: "Your buyer account has been created",
       body: `
-        <p><b>Business:</b> ${owner?.businessName}</p>
+        <p>Hello <b>${newBuyer.contactName || newBuyer.contactEmail}</b>,</p>
+      <p>You have been added as a buyer to <b>${owner?.businessName}</b>.</p>
+      <p>Here are your login credentials:</p>
         <p><b>Email:</b> ${newBuyer.contactEmail}</p>
-        <p style="font-size: 16px; color: #333;">
-          Hello <b>${newBuyer.contactName || newBuyer.contactEmail}</b>,
-        </p>
-        <p style="font-size: 16px; color: #333;">
-          You have been added as a buyer to ${owner?.businessName}. You will now receive offers from ${owner?.businessName}.
+        <p><b>Password:</b> ${password}</p>
+      <p>Please login and change your password immediately.</p>
+      <p style="margin: 20px 0;">
+        <a href="${loginUrl}" style="
+          background-color: #4CAF50;
+          color: white;
+          padding: 12px 24px;
+          text-decoration: none;
+          border-radius: 6px;
+          font-weight: bold;
+          display: inline-block;
+        ">Login to Your Account</a>
         </p>
       `,
       footer: "If you did not make this request, please contact support immediately.",

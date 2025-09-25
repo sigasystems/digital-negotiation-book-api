@@ -6,7 +6,7 @@
   import * as businessOwnerController from "./superadminController/sa.businessowner.controller.js"
   import * as businessOwnerControllers from "./businessOwnerControllers/businessOwner.controllers.js"
   import * as boBuyersControllers from "./businessOwnerControllers/bo.buyers.controllers.js"
-  import * as offerDraftControllers from "./offerControllers/offerDraft.controller.js"
+  import * as offerDraftControllers from "./offerDraftControllers/offerDraft.controller.js"
   import * as productController from "./productControllers/product.controller.js";
 import * as locationController from "./locationControllers/location.controller.js";
 
