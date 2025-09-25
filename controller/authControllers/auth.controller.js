@@ -103,7 +103,7 @@ export const login = asyncHandler(async (req, res) => {
     if (!businessOwner) {
       return errorResponse(res, 404, "Business owner record not found for this user");
     }
-    tokenPayload = { id: businessOwner.id, email: user.email, userRole: userRoleName, };
+    tokenPayload = { id: businessOwner.id, email: user.email, userRole: userRoleName, businessName : businessOwner.businessName, first_name : user?.first_name , last_name : user?.last_name};
   } else {
     tokenPayload = { id: user.id, email: user.email, userRole: userRoleName, };
   }
@@ -115,9 +115,6 @@ export const login = asyncHandler(async (req, res) => {
   // 8. Respond with access token and role info directly in data
   return successResponse(res, 200, "Login successful!", {
     accessToken,
-    userRole: userRoleName,
-    userFirstName: user?.first_name || "",
-    userLastName: user?.last_name || "",
     roleCreatedAt: roleDetails?.createdAt || null,
     roleUpdatedAt: roleDetails?.updatedAt || null,
     roleIsActive: roleDetails?.isActive ?? false,
