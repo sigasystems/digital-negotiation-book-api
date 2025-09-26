@@ -8,7 +8,8 @@
   import * as boBuyersControllers from "./businessOwnerControllers/bo.buyers.controllers.js"
   import * as offerDraftControllers from "./offerDraftControllers/offerDraft.controller.js"
   import * as productController from "./productControllers/product.controller.js";
-import * as locationController from "./locationControllers/location.controller.js";
+  import * as locationController from "./locationControllers/location.controller.js";
+  import * as boOfferControllers from "./offerControllers/bo.offer.controllers.js"
 
   // Later you can add more controllers like:
   // import * as userController from "./userController.js";
@@ -23,6 +24,7 @@ import * as locationController from "./locationControllers/location.controller.j
     businessOwnerControllers,
     boBuyersControllers,
     offerDraftControllers,
-  productController,
-  locationController,
+    productController,
+    locationController,
+    boOfferControllers
   };
