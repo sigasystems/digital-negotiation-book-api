@@ -2,7 +2,7 @@ import { successResponse, errorResponse } from "../../handlers/responseHandler.j
 import { asyncHandler } from "../../handlers/asyncHandler.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import {User, Role, BusinessOwner} from "../../model/index.js";
+import {User, Role, BusinessOwner, Buyer} from "../../model/index.js";
 import { registerSchemaValidation , loginSchemaValidation } from "../../schemaValidation/authValidation.js";
 import { refreshTokenGenerator , accessTokenGenerator } from "../../utlis/tokenGenerator.js";
 
@@ -99,13 +99,32 @@ export const login = asyncHandler(async (req, res) => {
   let tokenPayload;
   if (user.roleId === 2) {
     // Business owner
+    const businessOwnerName = user?.first_name + user?.last_name
     const businessOwner = await BusinessOwner.findOne({ where: { userId: user.id } });
     if (!businessOwner) {
       return errorResponse(res, 404, "Business owner record not found for this user");
     }
-    tokenPayload = { id: businessOwner.id, email: user.email, userRole: userRoleName, businessName : businessOwner.businessName, first_name : user?.first_name , last_name : user?.last_name};
+    tokenPayload = { id: businessOwner.id, email: user.email, userRole: userRoleName, businessName : businessOwner.businessName,
+      name : businessOwnerName || ""
+    };
+  } else if (user.roleId === 3) {
+    const buyer = await Buyer.findOne({ where: { contactEmail : email } });
+    if (!buyer) {
+      return errorResponse(res, 404, "Buyer record not found for this user");
+    }
+
+    tokenPayload = {
+      id: buyer.id,
+      email: user.email,
+      userRole: userRoleName,
+      businessName: buyer.buyersCompanyName,
+      name : buyer.contactName
+    };
   } else {
-    tokenPayload = { id: user.id, email: user.email, userRole: userRoleName, };
+    tokenPayload = { id: user.id, email: user.email, userRole: userRoleName,
+      businessName: "No business name in DB",
+      name: "no name in DB"
+    };
   }
 
   // 7. Create tokens

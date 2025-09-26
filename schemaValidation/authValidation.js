@@ -7,7 +7,7 @@ export const loginSchemaValidation = z.object({
     .min(8, "Password must be at least 8 characters")
     .max(128, "Password cannot exceed 128 characters")
     .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/,
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])/,
       "Password must include uppercase, lowercase, number, and special character"
     ),
 });

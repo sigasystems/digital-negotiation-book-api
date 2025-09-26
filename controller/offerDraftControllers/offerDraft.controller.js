@@ -1,8 +1,8 @@
 import { asyncHandler } from "../../handlers/asyncHandler.js";
 import { authorizeRoles } from "../../utlis/authorizeRoles.js";
 import { errorResponse, successResponse } from "../../handlers/responseHandler.js";
-import { Offer } from "../../model/index.js";
-import OfferSchema from "../../schemaValidation/offerValidation.js";
+import { OfferDraft } from "../../model/index.js";
+import {OfferSchema} from "../../schemaValidation/offerValidation.js";
 import {formatOfferDates, validateSizeBreakups} from "../../utlis/dateFormatter.js"
 import { Op } from "sequelize";
 
@@ -26,7 +26,7 @@ export const createOffer = asyncHandler(async (req, res) => {
       return errorResponse(res, 400, validationError);
     }
 
-    const draft = await Offer.create(parsed.data);
+    const draft = await OfferDraft.create(parsed.data);
     return successResponse(
       res,
       201,
@@ -49,7 +49,7 @@ export const getAllOfferDrafts = asyncHandler(async (req, res) => {
   try {
     authorizeRoles(req, ["business_owner"]);
 
-    const drafts = await Offer.findAll();
+    const drafts = await OfferDraft.findAll();
     const formattedDrafts = drafts.map(formatOfferDates);
 
     return successResponse(
@@ -76,7 +76,7 @@ export const getOfferDraftById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     if (!/^\d+$/.test(id)) return errorResponse(res, 400, "Invalid draft ID format");
 
-    const draft = await Offer.findByPk(id);
+    const draft = await OfferDraft.findByPk(id);
     if (!draft) return errorResponse(res, 404, "Offer draft not found");
 
     return successResponse(res, 200, "Offer draft fetched successfully", formatOfferDates(draft));
@@ -96,7 +96,7 @@ export const updateOfferDraft = asyncHandler(async (req, res) => {
     if (!/^\d+$/.test(id)) 
       return errorResponse(res, 400, "Invalid draft ID format");
 
-    const draft = await Offer.findByPk(id, { paranoid: false });
+    const draft = await OfferDraft.findByPk(id, { paranoid: false });
     if (!draft) 
       return errorResponse(res, 404, "Offer draft not found");
 
@@ -155,7 +155,7 @@ export const deleteOfferDraft = asyncHandler(async (req, res) => {
     const draftId = Number(id);
 
     // Include soft-deleted rows to check if already deleted
-    const draft = await Offer.findOne({ 
+    const draft = await OfferDraft.findOne({ 
       where: { draftNo: draftId },
       paranoid: false
     });
@@ -220,7 +220,7 @@ export const updateOfferStatus = asyncHandler(async (req, res) => {
       return errorResponse(res, 400, `Validation failed: ${errors.join(", ")}`);
     }
 
-    const draft = await Offer.findByPk(id, { paranoid: false }); // include soft-deleted rows
+    const draft = await OfferDraft.findByPk(id, { paranoid: false }); // include soft-deleted rows
 
     // Check if draft exists
     if (!draft) 
@@ -291,7 +291,7 @@ export const searchOfferDrafts = asyncHandler(async (req, res) => {
     }
 
     // Fetch drafts including soft-deleted rows
-    const drafts = await Offer.findAll({ 
+    const drafts = await OfferDraft.findAll({ 
       where: whereClause,
       paranoid: false // include deleted records
     });
