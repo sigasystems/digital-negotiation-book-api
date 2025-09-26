@@ -28,6 +28,44 @@ export const stripeWebhook = async (req, res) => {
         break;
       }
 
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object;
+        const payment = await Payment.findOne({ where: { stripeSubscriptionId: invoice.subscription } });
+        if (payment) {
+          payment.status = "success";
+          payment.paidAt = new Date();
+          await payment.save();
+        }
+        break;
+      }
+
+
+      case "invoice.finalized": {
+        const invoice = event.data.object;
+        const payment = await Payment.findOne({ where: { stripeSubscriptionId: invoice.subscription } });
+        if (payment) {
+          payment.status = "success";
+          payment.paidAt = new Date();
+          await payment.save();
+        }
+        break;
+      }
+
+
+      case "invoice.sent": {
+        const invoice = event.data.object;
+        const payment = await Payment.findOne({ where: { stripeSubscriptionId: invoice.subscription } });
+        if (payment) {
+          payment.status = "success";
+          payment.paidAt = new Date();
+          await payment.save();
+        }
+        break;
+      }
+
+
+
+
       case "invoice.payment_failed": {
         const invoice = event.data.object;
         const payment = await Payment.findOne({ where: { stripeSubscriptionId: invoice.subscription } });
