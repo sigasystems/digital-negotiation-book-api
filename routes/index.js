@@ -6,5 +6,6 @@ import paymentRoutes from "./paymentRoutes/payment.routes.js"
 import planRoutes from "./planRoutes/plan.routes.js"
 import superadminRoutes from "./superadminRoutes/superadmin.routes.js"
 import boOfferRoutes from "./offerRoutes/boOffer.routes.js"
+import offerActionsRoutes from "./offerRoutes/offerActions.routes.js"
 
-export {authRoutes, boBuyersRoutes, businessOwnersRoutes, offerDraftRoutes, paymentRoutes, planRoutes, superadminRoutes, boOfferRoutes}
+export {authRoutes, boBuyersRoutes, businessOwnersRoutes, offerDraftRoutes, paymentRoutes, planRoutes, superadminRoutes, boOfferRoutes, offerActionsRoutes}

@@ -100,10 +100,6 @@ const OfferVersion = sequelize.define(
     // ---------------------------
     // System Fields
     // ---------------------------
-    status: {
-      type: DataTypes.ENUM("open", "accepted", "rejected"),
-      defaultValue: "open",
-    },
     createdAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,

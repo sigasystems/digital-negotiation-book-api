@@ -131,6 +131,4 @@ export const createOfferVersionSchemaValidation = z.object({
       message: "shipmentDate must be a valid date",
     }),
   remark: z.string().max(100).optional().nullable(),
-
-  status: z.enum(["open", "accepted", "rejected"]).optional().default("open"),
 });

@@ -10,6 +10,7 @@
   import * as productController from "./productControllers/product.controller.js";
   import * as locationController from "./locationControllers/location.controller.js";
   import * as boOfferControllers from "./offerControllers/bo.offer.controllers.js"
+  import * as offerActionsControllers from "./offerControllers/offerAction.controllers.js"
 
   // Later you can add more controllers like:
   // import * as userController from "./userController.js";
@@ -26,5 +27,6 @@
     offerDraftControllers,
     productController,
     locationController,
-    boOfferControllers
+    boOfferControllers,
+    offerActionsControllers
   };
