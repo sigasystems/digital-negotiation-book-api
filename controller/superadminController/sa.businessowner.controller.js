@@ -137,8 +137,7 @@ export const getAllBusinessOwners = asyncHandler(async (req, res) => {
 
     if (withBuyers === "true") {
       owners = await BusinessOwner.findAll({
-        include: [{ model: Buyer, as: "buyers" }],
-      });
+    include: [{ model: Buyer, as: "buyers",attributes: ["id", "ownerId", "buyersCompanyName", "registrationNumber", "status"],},],});
     } else {
       owners = await BusinessOwner.findAll();
     }
