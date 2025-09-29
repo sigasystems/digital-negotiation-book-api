@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import helmet from "helmet";
-import { planRoutes, authRoutes, paymentRoutes, superadminRoutes, businessOwnersRoutes, boBuyersRoutes, offerDraftRoutes, boOfferRoutes } from "./routes/index.js"
+import { planRoutes, authRoutes, paymentRoutes, superadminRoutes, businessOwnersRoutes, boBuyersRoutes, offerDraftRoutes, boOfferRoutes, offerActionsRoutes } from "./routes/index.js"
 import productRoutes from "./routes/productRoutes/product.routes.js"
 import locationRoutes from "./routes/locationRoutes/location.routes.js"
 
@@ -35,6 +35,7 @@ app.use("/api/offer-draft", offerDraftRoutes)
 app.use("/api/product",productRoutes)
 app.use("/api/location",locationRoutes)
 app.use("/api/offer",boOfferRoutes)
+app.use("/api/offer-actions",offerActionsRoutes)
 
 
 

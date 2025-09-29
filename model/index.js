@@ -11,6 +11,7 @@ import Location from "./location.model.js";
 import Offer from "./offer.model.js";
 import OfferBuyer from "./OfferBuyer.model.js";
 import OfferVersion from "./OfferVersion.model.js";
+import OfferResult from "./OfferResult.model.js";
 // (If you want associations later, you can add here)
 // Example: Plan.hasMany(Subscription);
 
@@ -27,5 +28,6 @@ export {
   Product,
   Offer,
   OfferBuyer,
-  OfferVersion
+  OfferVersion,
+  OfferResult
 };
