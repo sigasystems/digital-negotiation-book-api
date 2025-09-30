@@ -12,6 +12,7 @@ import Offer from "./offer.model.js";
 import OfferBuyer from "./OfferBuyer.model.js";
 import OfferVersion from "./OfferVersion.model.js";
 import OfferResult from "./OfferResult.model.js";
+import PasswordResetOtp from "./passwordReset.model.js";
 // (If you want associations later, you can add here)
 // Example: Plan.hasMany(Subscription);
 
@@ -29,5 +30,6 @@ export {
   Offer,
   OfferBuyer,
   OfferVersion,
-  OfferResult
+  OfferResult,
+  PasswordResetOtp
 };
