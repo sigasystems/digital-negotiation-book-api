@@ -34,3 +34,8 @@ export const registerSchemaValidation = loginSchemaValidation.extend({
     .string()
     .regex(/^[0-9]{6,14}$/, "Invalid phone number format")
 });
+
+export const resetPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
+});
