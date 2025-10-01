@@ -70,6 +70,7 @@ export const createOfferSchema = z.object({
   plantApprovalNumber: z.string().min(1),
   brand: z.string().min(1),
   draftName: z.string().optional(),
+  offerName: z.string().optional(),
   offerValidityDate: z.date(),
   shipmentDate: z.date().optional(),
   grandTotal: z.number().optional(),
@@ -80,14 +81,16 @@ export const createOfferSchema = z.object({
   productName: z.string().min(1),
   speciesName: z.string().min(1),
   packing: z.string().optional(),
-  sizeBreakups: z.array(
+  sizeBreakups: z
+  .array(
     z.object({
-      size: z.string().min(1),
-      breakup: z.number(),
-      condition: z.string(),
-      price: z.number(),
+      size: z.string(),        // OK
+      breakup: z.number().int(),  // REQUIRED, integer
+      condition: z.string().max(50).optional(),
+      price: z.number(),       // REQUIRED, number
     })
-  ),
+  )
+  .nonempty(),
   total: z.number(),
   status: z.enum(["open", "close"]).optional(),
 })

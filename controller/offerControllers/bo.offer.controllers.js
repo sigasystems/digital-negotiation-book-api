@@ -11,6 +11,7 @@ export const createOffer = asyncHandler(async (req, res) => {
   authorizeRoles(req, ["business_owner"]);
 
   const draftId = req.params.id;
+  const {offerName} = req.body
   const transaction = await sequelize.transaction();
 
   try {
@@ -44,6 +45,7 @@ export const createOffer = asyncHandler(async (req, res) => {
     // 3 Prepare data for validation and offer creation
     const offerData = {
       businessOwnerId: draft.businessOwnerId,
+      offerName,
       businessName,
       fromParty: `${businessName} / ${userRole}`,
       origin: draft.origin,

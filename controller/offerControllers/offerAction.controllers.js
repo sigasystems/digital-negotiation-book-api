@@ -3,10 +3,12 @@ import sequelize from "../../config/db.js";
 import { Offer, OfferBuyer, OfferVersion, OfferResult, Buyer, BusinessOwner } from "../../model/index.js";
 import { successResponse, errorResponse } from "../../handlers/responseHandler.js";
 import { z } from "zod";
+import { Op } from "sequelize";
+import { authorizeRoles } from "../../utlis/authorizeRoles.js";
 
 // Zod validation for request body
 const respondOfferSchema = z.object({
-  buyerId: z.string().uuid({ message: "buyerId must be a valid UUID" }),
+  buyerIds: z.array(z.string().uuid({ message: "Each buyerId must be a valid UUID" })),
   action: z.enum(["accept", "reject"], { message: "action must be 'accept' or 'reject'" }),
 });
 
@@ -22,18 +24,28 @@ export const sendOffer = asyncHandler(async (req, res) => {
   try {
     if (!Array.isArray(buyerIds) || buyerIds.length === 0) {
       if (!transaction.finished) await transaction.rollback();
-      return errorResponse(res, 400, "buyerIds must be a non-empty array");
+      return errorResponse(res, 400, "Invalid request: Please provide at least one valid buyer ID.");
     }
 
     // Fetch the offer
     const offer = await Offer.findByPk(offerId, { transaction });
     if (!offer) {
       if (!transaction.finished) await transaction.rollback();
-      return errorResponse(res, 404, "Offer not found");
+      return errorResponse(
+        res,
+        404,
+        `Offer not found with ID: ${offerId}. It may never have existed or has been permanently removed.`
+      );
     }
+
     if (offer.status === "close" || offer.isDeleted) {
       if (!transaction.finished) await transaction.rollback();
-      return errorResponse(res, 400, "Cannot send a closed or deleted offer");
+      const reason = offer.status === "close" ? "closed" : "deleted";
+      return errorResponse(
+        res,
+        400,
+        `Cannot send offer "${offer.offerName}" (ID: ${offerId}) because it is ${reason}.`
+      );
     }
 
     let buyers = [];
@@ -42,7 +54,7 @@ export const sendOffer = asyncHandler(async (req, res) => {
       buyers = await Buyer.findAll({ where: { id: buyerIds }, transaction });
       if (buyers.length !== buyerIds.length) {
         if (!transaction.finished) await transaction.rollback();
-        return errorResponse(res, 400, "One or more buyers do not exist");
+        return errorResponse(res, 400, "Some of the buyers you selected were not found. Please check the buyer IDs or company names and try again.");
       }
 
       for (const buyer of buyers) {
@@ -51,7 +63,7 @@ export const sendOffer = asyncHandler(async (req, res) => {
           return errorResponse(
             res,
             403,
-            `Unauthorized: Buyer ${buyer.buyersCompanyName} does not belong to your business`
+            `You cannot send this offer to "${buyer.buyersCompanyName}" because this buyer is not registered under your business.`
           );
         }
       }
@@ -93,7 +105,7 @@ export const sendOffer = asyncHandler(async (req, res) => {
         return errorResponse(
           res,
           403,
-          "Unauthorized: Your associated business owner is not active"
+          `You cannot send offers because your associated business owner ("${buyer?.buyersCompanyName}") is not active. Please contact the business owner or support for assistance.`
         );
       }
 
@@ -109,7 +121,14 @@ export const sendOffer = asyncHandler(async (req, res) => {
 
     const newOfferBuyerData = buyerIds
       .filter(id => !existingBuyerIds.includes(id))
-      .map(buyerId => ({ offerId, buyerId, status: "open" }));
+      .map(buyerId => ({
+        offerId,
+        buyerId,
+        ownerId: userRole === "business_owner" 
+          ? userId      
+          : owner?.id || null, 
+        status: "open"
+      }));
 
     const createdOfferBuyers = await OfferBuyer.bulkCreate(newOfferBuyerData, { transaction, returning: true });
     const allOfferBuyers = [...existingOfferBuyers, ...createdOfferBuyers];
@@ -158,7 +177,23 @@ export const sendOffer = asyncHandler(async (req, res) => {
     }
 
     await transaction.commit();
-    return successResponse(res, 200, "Offer sent to buyers successfully", { offerId, buyerIds });
+    
+    let message;
+    if (userRole === "business_owner") {
+      const buyerNames = buyers.map(b => b.buyersCompanyName).join(", ");
+      message = `Offer (ID: ${offerId}) has been sent successfully from ${businessName} / business_owner to buyers: ${buyerNames}`;
+    } else if (userRole === "buyer") {
+      message = `Offer (ID: ${offerId}) has been sent successfully from ${buyers[0]?.buyersCompanyName} / buyer to business owner: ${owner?.businessName}`;
+    } else {
+      message = `Offer (ID: ${offerId}) has been sent successfully.`;
+    }
+
+    return successResponse(res, 200, message, {
+      offerId,
+      from: userRole === "business_owner" ? businessName : buyers[0]?.buyersCompanyName,
+      to: userRole === "business_owner" ? buyers.map(b => b.buyersCompanyName) : owner?.businessName,
+      buyerIds
+    });
 
   } catch (error) {
     if (!transaction.finished) await transaction.rollback();
@@ -171,7 +206,7 @@ export const respondOffer = asyncHandler(async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { buyerId, action } = respondOfferSchema.parse(req.body);
+    const { buyerId, action } = req.body;
     const offerId = req.params.id;
     const userId = req.user?.id;
     const userRole = req.user?.userRole;
@@ -180,27 +215,45 @@ export const respondOffer = asyncHandler(async (req, res) => {
     const offer = await Offer.findByPk(offerId, { transaction });
     if (!offer || offer.status === "close" || offer.isDeleted) {
       if (!transaction.finished) await transaction.rollback();
-      return errorResponse(res, 400, "Offer not found or closed/deleted");
+      return errorResponse(res, 400, `Offer not found with ID: ${offerId}. It may never have been created or has been removed.`);
     }
 
-    // Fetch buyer and owner
     const buyer = await Buyer.findByPk(buyerId, { transaction });
     if (!buyer) {
       if (!transaction.finished) await transaction.rollback();
-      return errorResponse(res, 404, "Buyer not found");
+      return errorResponse(res, 404, `The buyer with ID: ${buyerId} was not found. Please check the buyer ID or company name and try again.`);
     }
 
-    const owner = await BusinessOwner.findByPk(buyer.ownerId, { transaction });
+    let owner;
+    if (userRole === "business_owner") {
+      owner = await BusinessOwner.findByPk(userId, { transaction });
+      if (!owner || owner.status !== "active") {
+        if (!transaction.finished) await transaction.rollback();
+        return errorResponse(res, 403, "You are not an active business owner");
+      }
+
+      if (buyer.ownerId !== owner.id) {
+        if (!transaction.finished) await transaction.rollback();
+        return errorResponse(res, 403, `You cannot respond to this offer for "${buyer.buyersCompanyName}" because this buyer is not registered under your business. Please check your buyer list and try again.`);
+      }
+      if (offer.businessOwnerId !== owner.id) {
+        if (!transaction.finished) await transaction.rollback();
+        return errorResponse(res, 403, `You cannot respond to this offer ("${offer.offerName}") because it was prepared by another business.`);
+      }
+
+    } else {
+      owner = await BusinessOwner.findByPk(buyer.ownerId, { transaction });
     if (!owner || owner.status !== "active") {
       if (!transaction.finished) await transaction.rollback();
       return errorResponse(res, 403, "Buyer does not belong to a valid/active business owner");
+      }
     }
 
     // Role-based authorization
     if (userRole === "buyer" && userId !== buyer.id) {
       if (!transaction.finished) await transaction.rollback();
       return errorResponse(res, 403, "You can only respond to your own offers");
-    } else if (userRole !== "buyer" && userRole !== "business_owner") {
+    } else if (!["buyer", "business_owner"].includes(userRole)) {
       if (!transaction.finished) await transaction.rollback();
       return errorResponse(res, 403, "Invalid role");
     }
@@ -224,7 +277,7 @@ export const respondOffer = asyncHandler(async (req, res) => {
 
     // Determine actor details
     const actorName = userRole === "buyer" ? buyer.contactName : `${owner.first_name} ${owner.last_name}`;
-    const actorCompany = userRole === "buyer" ? buyer.buyersCompanyName : owner.businessName;
+    const actorCompany = userRole === "buyer" ? buyer.buyersCompanyName : owner.id;
     const actorFullDetails = `${actorName} / ${actorCompany} / ${userRole}`;
 
     // Check if this actor already responded
@@ -238,7 +291,6 @@ export const respondOffer = asyncHandler(async (req, res) => {
         return errorResponse(res, 400, "You have already rejected this offer");
       }
     }
-
     // Fetch latest OfferVersion
     const lastVersion = await OfferVersion.findOne({
       where: { offerBuyerId: offerBuyer.id },
@@ -246,7 +298,7 @@ export const respondOffer = asyncHandler(async (req, res) => {
       transaction,
     });
     const offerVersionId = lastVersion?.id;
-    
+
     // Create OfferResult
     const offerResult = await OfferResult.create(
       {
@@ -278,3 +330,137 @@ export const respondOffer = asyncHandler(async (req, res) => {
     return errorResponse(res, 500, error.message || "Failed to respond to offer");
   }
 });
+
+export const getRecentNegotiations = asyncHandler(async (req, res) => {
+  try {
+    authorizeRoles(req, ["business_owner"]);
+    // Get IDs from body or from authenticated user token
+    let ownerId = req.body.ownerId || (req.user?.userRole === "business_owner" ? req.user.id : null);
+    let buyerId = req.body.buyerId || (req.user?.userRole === "buyer" ? req.user.id : null);
+
+    if (!ownerId && !buyerId) {
+      return errorResponse(res, 400, "Owner ID or Buyer ID must be provided or available in token");
+    }
+
+    // Fetch all OfferBuyers for this owner and buyer
+   const whereClause = {};
+    if (ownerId) whereClause.ownerId = ownerId;
+    if (buyerId) whereClause.buyerId = buyerId;
+
+    const offerBuyers = await OfferBuyer.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: OfferVersion,
+          as: "versions",
+          order: [["versionNo", "DESC"]],
+        },
+      ],
+    });
+
+    // Collect all OfferVersions into a single array
+    const negotiations = [];
+    offerBuyers.forEach((offerBuyer) => {
+      offerBuyer.versions.forEach((version) => {
+        negotiations.push({
+          offerVersionId: version.id,
+          offerId: version.offerId,
+          versionNo: version.versionNo,
+          fromParty: version.fromParty,
+          toParty: version.toParty,
+          productName: version.productName,
+          speciesName: version.speciesName,
+          brand: version.brand,
+          plantApprovalNumber: version.plantApprovalNumber,
+          quantity: version.quantity,
+          tolerance: version.tolerance,
+          paymentTerms: version.paymentTerms,
+          sizeBreakups: version.sizeBreakups,
+          grandTotal: version.grandTotal,
+          shipmentDate: version.shipmentDate,
+          remark: version.remark,
+          offerName: version.offerName,
+          createdAt: version.createdAt,
+          updatedAt: version.updatedAt,
+        });
+      });
+    });
+
+    return successResponse(res, 200, "Recent negotiations fetched successfully", negotiations);
+  } catch (error) {
+    console.error("Error fetching negotiations:", error);
+    return errorResponse(res, 500, error.message || "Failed to fetch recent negotiations");
+  }
+});
+
+export const getLatestNegotiation = asyncHandler(async (req, res) => {
+  try {
+    authorizeRoles(req, ["business_owner"]);
+    const ownerId = req.body.ownerId || (req.user?.userRole === "business_owner" ? req.user.id : null);
+    const buyerId = req.body.buyerId || (req.user?.userRole === "buyer" ? req.user.id : null);
+
+    if (!ownerId && !buyerId) {
+      return errorResponse(res, 400, "Owner ID or Buyer ID must be provided or available in token");
+    }
+
+    // Fetch the OfferBuyer record
+    const offerBuyer = await OfferBuyer.findOne({
+      where: {
+        ...(ownerId && { ownerId }),
+        ...(buyerId && { buyerId }),
+      },
+    });
+
+    if (!offerBuyer) {
+      return successResponse(res, 200, "No negotiations found for this owner/buyer", []);
+    }
+
+    // Find the latest versionNo for this offerBuyer
+    const latestVersion = await OfferVersion.findOne({
+      where: { offerBuyerId: offerBuyer.id },
+      order: [["versionNo", "DESC"]],
+    });
+
+    if (!latestVersion) {
+      return successResponse(res, 200, "No negotiations found for this owner/buyer", []);
+    }
+
+    // Fetch all versions of the latest negotiation series (up to latestVersion.versionNo)
+    // Assuming continuous versionNo sequence represents a single negotiation
+    const versions = await OfferVersion.findAll({
+      where: {
+        offerBuyerId: offerBuyer.id,
+        versionNo: { [Op.lte]: latestVersion.versionNo },
+      },
+      order: [["versionNo", "ASC"]],
+    });
+
+    // Format response
+    const negotiations = versions.map(version => ({
+      offerVersionId: version.id,
+      offerId: version.offerId,
+      versionNo: version.versionNo,
+      fromParty: version.fromParty,
+      toParty: version.toParty,
+      productName: version.productName,
+      speciesName: version.speciesName,
+      brand: version.brand,
+      plantApprovalNumber: version.plantApprovalNumber,
+      quantity: version.quantity,
+      tolerance: version.tolerance,
+      paymentTerms: version.paymentTerms,
+      sizeBreakups: version.sizeBreakups,
+      grandTotal: version.grandTotal,
+      shipmentDate: version.shipmentDate,
+      remark: version.remark,
+      offerName: version.offerName,
+      createdAt: version.createdAt,
+      updatedAt: version.updatedAt,
+    }));
+
+    return successResponse(res, 200, "Latest negotiation versions fetched successfully", negotiations);
+  } catch (error) {
+    console.error("Error fetching latest negotiation:", error);
+    return errorResponse(res, 500, error.message || "Failed to fetch latest negotiation");
+  }
+})

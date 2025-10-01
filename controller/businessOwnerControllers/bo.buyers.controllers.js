@@ -9,30 +9,31 @@ import { sendEmailWithRetry } from "../../utlis/emailTemplate.js";
 import bcrypt from "bcrypt";
 import generateSecurePassword from "../../utlis/genarateSecurePassword.js";
 
-// 1. Add Buyer
 export const addBuyer = asyncHandler(async (req, res) => {
+  // 1. Validate request body
   const parsedData = buyerSchema.safeParse(req.body);
   if (!parsedData.success) {
     const errors = parsedData.error.issues.map((i) => i.message);
     return errorResponse(res, 400, errors.join(", "));
   }
 
-   try {
-      authorizeRoles(req, ["business_owner"]);
-    } catch (err) {
-      return errorResponse(res, err.statusCode || 403, err.message);
-    }
+  // 2. Authorize roles
+  try {
+    authorizeRoles(req, ["business_owner"]);
+  } catch (err) {
+    return errorResponse(res, err.statusCode || 403, err.message);
+  }
 
   const { registrationNumber, contactEmail, contactName } = parsedData.data;
-  const ownerId = req.user.id
+  const ownerId = req.user.id;
 
-  // Ensure owner exists
+  // 3. Ensure business owner exists
   const owner = await BusinessOwner.findByPk(ownerId);
   if (!owner) {
     return errorResponse(res, 404, "Business owner not found");
   }
 
-  // Ensure registration number is unique if provided
+  // 4. Ensure registration number is unique if provided
   if (registrationNumber) {
     const existingReg = await Buyer.findOne({ where: { registrationNumber } });
     if (existingReg) {
@@ -40,44 +41,46 @@ export const addBuyer = asyncHandler(async (req, res) => {
     }
   }
 
-  // Ensure contact email is unique
-  const existingEmail = await Buyer.findOne({ where: { contactEmail } });
-  if (existingEmail) {
+  // 5. Ensure email is unique in User table
+  const existingUser = await User.findOne({ where: { email: contactEmail } });
+  if (existingUser) {
     return errorResponse(res, 409, "Contact email already in use");
   }
 
-  // 1. Autogenerate password
+  // 6. Autogenerate password and hash it
   const password = generateSecurePassword(12);
   const hashedPassword = await bcrypt.hash(password, 12);
 
   let firstName = contactName || contactEmail;
   let lastName = "";
 
-if (contactName) {
-  const nameParts = contactName.trim().split(" ");
-  firstName = nameParts.shift(); // first word
-  lastName = nameParts.join(" "); // the rest
-}
+  if (contactName) {
+    const nameParts = contactName.trim().split(" ");
+    firstName = nameParts.shift(); // first word
+    lastName = nameParts.join(" "); // the rest
+  }
 
-// Create user
-const user = await User.create({
-  email: contactEmail,
-  password_hash: hashedPassword,
-  roleId: 3,
-  first_name: firstName,
-  last_name: lastName || null, // allow null if no last name
-});
+  // 7. Create user safely
+  const user = await User.create({
+    email: contactEmail,
+    password_hash: hashedPassword,
+    roleId: 3,
+    first_name: firstName,
+    last_name: lastName || null,
+  });
 
-  // 3. Create Buyer record
+  // 8. Create Buyer record
   const newBuyer = await Buyer.create({
     ...parsedData.data,
+    ownerId: ownerId,
     userId: user.id,
     isVerified: true,
   });
 
+  // 9. Send welcome email
   const loginUrl = `${process.env.FRONTEND_URL}/login`;
 
-   const mailOptions = {
+  const mailOptions = {
     from: `"${owner?.businessName}" <${process.env.EMAIL_USER}>`,
     to: newBuyer.contactEmail,
     subject: `Buyer account created for ${owner?.businessName}`,
@@ -86,21 +89,21 @@ const user = await User.create({
       subTitle: "Your buyer account has been created",
       body: `
         <p>Hello <b>${newBuyer.contactName || newBuyer.contactEmail}</b>,</p>
-      <p>You have been added as a buyer to <b>${owner?.businessName}</b>.</p>
-      <p>Here are your login credentials:</p>
+        <p>You have been added as a buyer to <b>${owner?.businessName}</b>.</p>
+        <p>Here are your login credentials:</p>
         <p><b>Email:</b> ${newBuyer.contactEmail}</p>
         <p><b>Password:</b> ${password}</p>
-      <p>Please login and change your password immediately.</p>
-      <p style="margin: 20px 0;">
-        <a href="${loginUrl}" style="
-          background-color: #4CAF50;
-          color: white;
-          padding: 12px 24px;
-          text-decoration: none;
-          border-radius: 6px;
-          font-weight: bold;
-          display: inline-block;
-        ">Login to Your Account</a>
+        <p>Please login and change your password immediately.</p>
+        <p style="margin: 20px 0;">
+          <a href="${loginUrl}" style="
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            display: inline-block;
+          ">Login to Your Account</a>
         </p>
       `,
       footer: "If you did not make this request, please contact support immediately.",
@@ -117,6 +120,7 @@ const user = await User.create({
     );
   }
 
+  // 10. Respond with success
   return successResponse(res, 201, "Buyer added successfully", newBuyer);
 });
 
