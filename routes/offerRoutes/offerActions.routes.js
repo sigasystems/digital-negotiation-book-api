@@ -4,9 +4,11 @@ import { offerActionsControllers } from "../../controller/index.js";
 
 const router = express.Router()
 
-const {respondOffer, sendOffer} = offerActionsControllers
+const {respondOffer, sendOffer, getRecentNegotiations, getLatestNegotiation} = offerActionsControllers
 
 router.use(authenticateJWT)
+router.get("/last-negotiations", getLatestNegotiation)
+router.get("/all-negotiation", getRecentNegotiations)
 router.post("/:id", respondOffer)
 router.post("/send-offer/:id", sendOffer)
 

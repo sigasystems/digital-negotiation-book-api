@@ -49,11 +49,9 @@ export const buyerSchema = z.object({
   postalCode: z.string().optional(),
 
   // System fields
-  status: z
-    .enum(["active", "inactive", "suspended"], {
-      message: "Status must be active, inactive, or suspended",
-    })
-    .default("active"),
+ status: z
+  .enum(["active", "inactive"], { message: "Status must be active or inactive" })
+  .default("active"),
 
   isVerified: z.boolean().default(false),
   isDeleted: z.boolean().default(false),
